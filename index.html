@@ -155,6 +155,7 @@
   .sheet .pane-tabs { flex: none; margin: 0; }
   .sheet .piece-tabs .btn { padding: 5px 10px; font-size: 13px; white-space: nowrap; }
   .sheet .nums { flex-wrap: nowrap; overflow-x: auto; }
+  .sheet-rest.songs-mode .piece-tabs.nums { flex: 0 0 auto; flex-wrap: wrap; overflow: visible; }
   .sheet > .nhip-pane { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
   .sheet > .lo-pane { flex: 1; min-height: 0; overflow: auto; }
   .sheet .piece-blurb { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -572,6 +573,7 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
+    .sheet-rest.songs-mode .piece-tabs.nums { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; }
     .piece-tabs .btn { flex: none; }
     .seg, .line-acts, .line-switch { flex-wrap: wrap; }
     .btn, .choices button, .rail button, .rcard { min-height: 44px; }
