@@ -89,6 +89,7 @@
   .note-staff .score-scroll, .fit-score { flex: 1; min-height: 0; overflow: hidden; }
   .note-staff .score-scroll svg.staff { max-height: none; }
   .note-staff .foot-note { flex: none; margin: 4px 0 0; font-size: 12px; }
+  .note-quiz-cta { margin-top: 4px; }
   .detail { flex: none; }
   .sheet { display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
   .sheet .now { min-height: 0; }
@@ -221,8 +222,12 @@
     background: var(--raise); color: var(--soft); padding: 8px 2px; font-weight: 800; font-size: 13px;
   }
   .lamps i b { display: block; font-size: 11px; font-weight: 700; opacity: .7; }
+  .lamps i .lamp-up { display: none; }
   .lamps i.on.m-dap { background: var(--accent); color: white; }
   .lamps i.on.m-nhac { background: var(--nhac); color: white; }
+  .lamps i.phase-up { background: var(--nhac); color: white; }
+  .lamps i.phase-up .lamp-down { display: none; }
+  .lamps i.phase-up .lamp-up { display: inline; }
   .rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
   .rcard {
     text-align: left; background: var(--raise); border: 1px solid var(--line);
@@ -442,10 +447,6 @@
   }
   .dock { display: none; }
   .visit-stat {
-    position: fixed;
-    left: 12px;
-    bottom: 12px;
-    z-index: 30;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -481,7 +482,7 @@
     .switches label { font-size: 13px; }
     .dock {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       position: fixed;
       left: 0; right: 0; bottom: 0;
       z-index: 20;
@@ -571,11 +572,110 @@
     .hole { flex: none; width: 58px; min-width: 58px; }
     .hole b, .hole small { font-size: 11px; overflow-wrap: break-word; }
     .breath-main { grid-template-columns: 1fr; }
+    .breath-fit > #breathScore { position: sticky; top: 0; z-index: 4; box-shadow: 0 6px 16px rgba(0, 0, 0, .28); }
     .wave-card { min-height: 160px; }
     .choices { grid-template-columns: 1fr 1fr; }
     .toast { bottom: calc(76px + env(safe-area-inset-bottom)); max-width: calc(100% - 24px); text-align: center; }
-    .visit-stat { left: 10px; bottom: calc(72px + env(safe-area-inset-bottom)); font-size: 14px; }
+    .visit-stat { grid-column: 1 / -1; justify-self: start; font-size: 13px; }
     button, .rcard, .ladder-btn, .pad { touch-action: manipulation; }
+  }
+  @media (max-width: 600px) {
+    .wrap {
+      padding: calc(6px + env(safe-area-inset-top)) 10px calc(60px + env(safe-area-inset-bottom));
+    }
+    .topbar { gap: 4px 8px; margin-bottom: 5px; padding-bottom: 5px; }
+    .topbar h1 { font-size: 14px; }
+    .tempo span { white-space: nowrap; font-size: 11px; }
+    .switches {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px 8px;
+    }
+    .switches label { min-width: 0; white-space: normal; font-size: 11px; line-height: 1.25; }
+    .visit-stat { display: none; }
+    .dock { gap: 3px; padding-left: 5px; padding-right: 5px; }
+    .dock button { min-height: 44px; font-size: 13px; }
+    #app { overscroll-behavior-y: contain; scrollbar-width: thin; }
+    .score-scroll,
+    .note-staff .score-scroll,
+    .practice-fit .score-scroll,
+    .practice-fit > .card .score-scroll,
+    .sheet .demo-card .score-scroll,
+    .sheet-rest .piece .score-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: flex-start;
+      justify-content: flex-start;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
+    }
+    .score-scroll svg.staff { scroll-snap-align: start; }
+    .note-layout, .sheet, .practice-fit, .breath-fit { gap: 8px; }
+    .card { padding: 9px 10px; }
+    .breath-fit > #breathScore { padding: 7px 10px; }
+    .breath-side .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .breath-side .row #breathMic { grid-column: 1 / -1; }
+    .breath-side .btn { min-height: 44px; }
+    .breath-rails { padding: 7px 8px; }
+    .rail { gap: 4px; }
+    .rail button { min-width: 42px; min-height: 40px; }
+    .wave-card { min-height: 0; }
+    .wave-card canvas { flex: none; height: 48px; }
+  }
+  @media (max-width: 600px) and (max-height: 700px) {
+    .wrap { padding-top: calc(4px + env(safe-area-inset-top)); }
+    .topbar { gap: 3px 6px; margin-bottom: 3px; padding-bottom: 3px; }
+    .switches { gap: 2px 6px; }
+    .score-scroll,
+    .note-staff .score-scroll,
+    .practice-fit .score-scroll,
+    .practice-fit > .card .score-scroll,
+    .sheet .demo-card .score-scroll,
+    .sheet-rest .piece .score-scroll {
+      height: min(34dvh, 240px);
+      min-height: 140px;
+      max-height: 240px;
+    }
+  }
+  .sheet-rest.songs-mode { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+  .sheet-rest.songs-mode .pieces,
+  .sheet-rest.songs-mode .piece { flex: none; min-height: auto; overflow: visible; }
+  .sheet-rest.songs-mode .piece .score-scroll.full-sheet,
+  .practice-fit.song-practice .tap-layout .score-scroll.full-sheet {
+    flex: none; height: auto; min-height: 0; max-height: none; overflow: visible;
+    justify-content: flex-start; align-items: center; gap: 8px;
+  }
+  .practice-fit.song-practice { overflow-x: hidden; overflow-y: auto; }
+  .practice-fit.song-practice > .tap-layout { flex: none; height: auto; min-height: 0; overflow: visible; }
+  .practice-fit.song-practice .tap-layout > .card { min-height: auto; overflow: visible; }
+  .song-focus { position: fixed; z-index: 30; inset: 0; background: var(--paper); color: #241c16; display: flex; flex-direction: column; gap: 8px; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .song-focus-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: none; }
+  .song-focus-head h2 { margin: 0; font-size: clamp(16px, 2.4vw, 24px); }
+  .song-focus-head p { margin: 2px 0 0; color: #665f55; font-size: 12px; }
+  .song-focus-close { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: #241c16; color: white; font-size: 28px; line-height: 1; }
+  .song-focus-tools { display: flex; align-items: center; gap: 12px; flex: none; }
+  .song-focus-tools label { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 420px; color: #514a41; font-size: 13px; }
+  .song-focus-tools input { min-width: 60px; flex: 1; accent-color: var(--accent); }
+  .song-focus-score { flex: 1; min-height: 0; width: 100%; height: auto; max-height: none; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2px; background: var(--paper); }
+  .song-focus-score svg.staff { flex: none; max-width: 100%; }
+  .beat-tool { height: 100%; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 12px; }
+  .beat-tool .card { min-height: 0; overflow: auto; }
+  .beat-tool h2 { margin: 0 0 6px; }
+  .beat-tool p { color: var(--soft); }
+  .beat-tool input[type="url"], .beat-tool input[type="number"], .beat-tool select { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+  .beat-tool input[type="file"] { max-width: 100%; }
+  .beat-result { border-left: 3px solid var(--accent); padding-left: 10px; }
+  .beat-result strong { color: var(--accent-ink); }
+  .beat-player { width: 100%; margin-top: 8px; }
+  .quality-tip { background: var(--good-bg); border-radius: 6px; padding: 10px; color: #c7f0d8 !important; }
+  @media (max-width: 720px) {
+    .beat-tool { grid-template-columns: 1fr; overflow-y: auto; }
+    .beat-tool .card { overflow: visible; }
+    .song-focus-tools .btn { padding: 7px 9px; }
+    .beat-tool { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+    .song-focus { gap: 5px; padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom)); }
+    .song-focus-head p { max-height: 2.8em; overflow: hidden; }
+    .song-focus-score { padding: 0; }
   }
 </style>
 </head>
@@ -588,6 +688,7 @@
       <button type="button" data-act="tab" data-tab="rhythm">Đập và nhấc</button>
       <button type="button" data-act="tab" data-tab="practice">Luyện tập</button>
       <button type="button" data-act="tab" data-tab="breath">Xông hơi</button>
+      <button type="button" data-act="tab" data-tab="beat">Beat → sáo</button>
     </nav>
     <label class="tempo">
       <span>Tốc độ: <strong id="bpmVal">72</strong> nhịp mỗi phút</span>
@@ -598,6 +699,7 @@
       <label><input type="checkbox" id="sw-hint" checked> Gợi ý chân</label>
       <label><input type="checkbox" id="sw-extra"> Hiện cao độ 2 và 3</label>
     </div>
+    <p class="visit-stat">Lượt mở <img alt="" width="25" height="20" src="https://hits.sh/30101992a.github.io/hoc-sao.svg?style=flat&amp;label=%20&amp;color=e0a04a&amp;labelColor=1a1916"></p>
   </div>
   <main id="app"></main>
 </div>
@@ -607,8 +709,8 @@
   <button type="button" data-act="tab" data-tab="rhythm">Đập</button>
   <button type="button" data-act="tab" data-tab="practice">Luyện</button>
   <button type="button" data-act="tab" data-tab="breath">Hơi</button>
+  <button type="button" data-act="tab" data-tab="beat">Beat</button>
 </nav>
-<p class="visit-stat">Lượt mở <img alt="" width="25" height="20" src="https://hits.sh/30101992a.github.io/hoc-sao.svg?style=flat&amp;label=%20&amp;color=e0a04a&amp;labelColor=1a1916"></p>
 <script>
 "use strict";
 
@@ -671,63 +773,63 @@ const COLORS = {
 };
 
 const RHYTHMS = [
-  { id: "q", name: "Nốt đen", e: 2, phrase: "1 phách · dậm hoặc nhấc" },
-  { id: "h", name: "Nốt trắng", e: 4, phrase: "2 phách · đập, rồi nhấc" },
-  { id: "w", name: "Nốt tròn", e: 8, phrase: "4 phách · đập, nhấc, đập, nhấc" },
-  { id: "dh", name: "Nốt trắng chấm", e: 6, phrase: "3 phách · đập, nhấc, đập" },
+  { id: "q", name: "Nốt đen", e: 2, phrase: "1 phách · dậm ở đầu phách" },
+  { id: "h", name: "Nốt trắng", e: 4, phrase: "2 phách · dậm đầu mỗi phách, giữ hơi" },
+  { id: "w", name: "Nốt tròn", e: 8, phrase: "4 phách · dậm đầu mỗi phách, giữ hơi" },
+  { id: "dh", name: "Nốt trắng chấm", e: 6, phrase: "3 phách · dậm đầu mỗi phách, giữ hơi" },
   { id: "e", name: "Nốt móc đơn", e: 1, phrase: "½ phách · hai nốt trong một phách" },
-  { id: "dq", name: "Nốt đen chấm", e: 3, phrase: "1½ phách · đập và nửa nhấc" }
+  { id: "dq", name: "Nốt đen chấm", e: 3, phrase: "1½ phách · phách kế tiếp thêm nửa phách" }
 ];
 
 const PIECES = [
   { id: "buoc", title: "Đi từng bước", level: 1,
-    text: "Bốn nốt đen. Hàng chân dưới khuông: đập, nhấc, đập, nhấc. Mỗi số đánh lưỡi một lần.",
+    text: "Bốn nốt đen, mỗi nốt dài một phách. Dậm ở đầu từng phách, nhấc chân ở quãng giữa; bật lưỡi đúng lúc nốt bắt đầu.",
     seq: [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2]] },
   { id: "den4", title: "Đen bốn ô", level: 1,
-    text: "Bốn ô nốt đen. Nhìn hàng chân: phách đập và phách nhấc đều là một nốt, đều đánh lưỡi.",
+    text: "Bốn ô nốt đen. Dậm chân ở đầu mỗi phách; nhấc lên giữa phách. Mỗi nốt mới đều đánh lưỡi đúng đầu phách.",
     seq: [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["A4", 2], ["G4", 2], ["E4", 2], ["F4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["C4", 2]] },
   { id: "dendai", title: "Đen tám ô", level: 1,
-    text: "Sheet dài tám ô, toàn nốt đen. Mỗi ô chân một nốt. Đập và nhấc đều đánh lưỡi.",
+    text: "Bản dài tám ô, toàn nốt đen. Dậm ở mỗi phách, nhấc lên giữa các phách; mỗi nốt đều bắt đầu bằng một tiếng lưỡi.",
     seq: [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["A4", 2], ["G4", 2], ["E4", 2], ["F4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["E4", 2], ["G4", 2], ["F4", 2], ["D4", 2], ["C4", 2], ["E4", 2], ["G4", 2], ["E4", 2], ["F4", 2], ["A4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["C4", 2]] },
   { id: "trang", title: "Nốt trắng đều", level: 1, group: "trắng",
-    text: "Cả bản là nốt trắng. Mỗi nốt: đánh lưỡi lúc dậm, giữ hơi lúc nhấc về tư thế giơ.",
+    text: "Cả bản là nốt trắng. Đánh lưỡi ở phách đầu, giữ hơi qua phách kế tiếp; nhấc chân ở giữa các phách.",
     seq: [["C4", 4], ["E4", 4], ["G4", 4], ["E4", 4], ["A4", 4], ["F4", 4], ["D4", 4], ["C4", 4]] },
   { id: "trangxa", title: "Trắng đi xa", level: 1, group: "trắng",
-    text: "Thanh đen ghi Lưỡi: đánh lưỡi lúc dậm. Thanh xanh ghi Luyến, có cung phía trên khuông: nối hơi sang nốt sau, không đánh lưỡi. Chân vẫn đập rồi nhấc.",
+    text: "Thanh đen ghi Lưỡi: đánh lưỡi khi nốt bắt đầu. Thanh xanh ghi Luyến, có cung phía trên khuông: nối hơi sang nốt sau, không đánh lưỡi. Dậm ở đầu mỗi phách, nhấc giữa phách.",
     seq: [["C4", 4], ["E4", 4, "luyen"], ["G4", 4], ["A4", 4, "luyen"], ["G4", 4], ["E4", 4, "luyen"], ["D4", 4], ["C4", 4, "luyen"]] },
   { id: "trangdai", title: "Trắng tám ô", level: 1, group: "trắng",
-    text: "Sheet dài tám ô nốt trắng. Mỗi nốt phủ một ô đập và một ô nhấc. Lưỡi chỉ ở ô đập.",
+    text: "Bản dài tám ô nốt trắng. Mỗi nốt dài hai phách; đánh lưỡi ở đầu nốt, giữ hơi qua phách kế tiếp.",
     seq: [["C4", 4], ["E4", 4], ["G4", 4], ["E4", 4], ["A4", 4], ["F4", 4], ["G4", 4], ["E4", 4], ["F4", 4], ["D4", 4], ["E4", 4], ["C4", 4], ["G4", 4], ["E4", 4], ["D4", 4], ["C4", 4]] },
   { id: "tron", title: "Giữ cả ô", level: 1,
-    text: "Nốt tròn chỉ đánh lưỡi một lần, lúc dậm đầu. Chân vẫn đi đập, nhấc, đập, nhấc trong khi tiếng ngân.",
+    text: "Nốt tròn chỉ đánh lưỡi một lần ở đầu ô. Giữ hơi qua bốn phách; dậm ở đầu mỗi phách, nhấc chân ở giữa.",
     seq: [["E4", 8], ["G4", 8], ["F4", 8], ["C4", 8]] },
   { id: "xen", title: "Trắng xen đen", level: 1, group: "trắng",
-    text: "Nốt trắng là đập rồi nhấc, lưỡi chỉ lúc đập. Hai nốt đen sau là một đập và một nhấc, nốt nào cũng đánh lưỡi.",
+    text: "Nốt trắng dài hai phách, chỉ đánh lưỡi ở đầu nốt. Hai nốt đen sau mỗi nốt dài một phách và đều đánh lưỡi ở đầu.",
     seq: [["G4", 4], ["E4", 2], ["D4", 2], ["C4", 4], ["D4", 2], ["E4", 2], ["F4", 4], ["E4", 2], ["D4", 2], ["C4", 8]] },
   { id: "cham", title: "Trắng chấm", level: 2,
-    text: "Nốt trắng chấm giữ ba phách: đập, nhấc, đập, lưỡi chỉ ở đầu. Nốt đen cuối rơi vào lần nhấc, nhưng vẫn đánh lưỡi vì là nốt mới.",
-    seq: [["E4", 6], ["G4", 2], ["A4", 6], ["G4", 2], ["F4", 6], ["E4", 2], ["D4", 6], ["C4", 2]] },
+    text: "Nốt trắng chấm dài ba phách. Các cặp có cung luyến thì nối hơi, không bật lưỡi ở nốt sau. Chân vẫn đập đều mỗi phách và nhấc ở giữa phách.",
+    seq: [["E4", 6], ["G4", 2, "luyen"], ["A4", 6], ["G4", 2, "luyen"], ["F4", 6], ["E4", 2, "luyen"], ["D4", 6], ["C4", 2, "luyen"]] },
   { id: "moc", title: "Hai tiếng một chân", level: 2, group: "móc",
-    text: "Hai nốt móc đơn nằm gọn trong một phách. Phách đập thì chân dậm một cái, phách nhấc thì chân nhấc một cái, lưỡi đánh hai tiếng.",
+    text: "Hai nốt móc đơn nằm trong một phách. Chân dậm ở đầu phách rồi nhấc giữa phách; lưỡi bật hai tiếng đều nhau.",
     seq: [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["E4", 1], ["F4", 2], ["E4", 2], ["D4", 2], ["C4", 2]] },
   { id: "mocdeu", title: "Móc đều", level: 2, group: "móc",
-    text: "Cả bản là nốt móc đơn. Mỗi phách hai nốt: chân một lần, lưỡi hai lần.",
+    text: "Cả bản là nốt móc đơn. Mỗi phách có hai nốt: dậm ở đầu phách, nhấc giữa phách, lưỡi bật đều hai tiếng.",
     seq: [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["E4", 1], ["G4", 1], ["E4", 1], ["F4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["E4", 1], ["C4", 1]] },
   { id: "moctrang", title: "Móc rồi trắng", level: 2, group: "móc",
-    text: "Nửa ô đầu là bốn nốt móc: mỗi phách đánh lưỡi hai lần. Nốt trắng cuối ô: đánh lưỡi lúc dậm, nhấc thì giữ hơi.",
+    text: "Nửa ô đầu là bốn nốt móc: mỗi phách đánh lưỡi hai lần. Nốt trắng cuối ô: đánh lưỡi ở đầu nốt, giữ hơi qua các phách sau.",
     seq: [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 4], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 4], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 4], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["C4", 4]] },
   { id: "trangmoc", title: "Trắng rồi móc", level: 2, group: "móc",
-    text: "Nốt trắng trước: lưỡi một lần, giữ hơi lúc nhấc. Bốn nốt móc sau: lưỡi theo từng nốt, chân vẫn một đập rồi một nhấc.",
+    text: "Nốt trắng trước: lưỡi một lần, giữ hơi đủ hai phách. Bốn nốt móc sau: lưỡi theo từng nốt; nhấc chân ở giữa phách.",
     seq: [["C4", 4], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 4], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["E4", 4], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["D4", 4], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1]] },
   { id: "mocdai", title: "Móc tám ô", level: 2, group: "móc",
     text: "Sheet dài tám ô nốt móc. Mỗi ô chân có hai nốt: chân một lần, lưỡi hai lần.",
     seq: [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["E4", 1], ["G4", 1], ["E4", 1], ["F4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["E4", 1], ["F4", 1], ["D4", 1], ["C4", 1], ["E4", 1], ["D4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["C4", 1]] },
   { id: "ghepdai", title: "Ghép tám ô", level: 2,
-    text: "Sheet dài tám ô, trộn nốt đen, nốt trắng và nốt móc. Hàng chân vẫn đập, nhấc, đập, nhấc. Đánh lưỡi khi sang nốt mới.",
+    text: "Bản dài tám ô, trộn nốt đen, nốt trắng và nốt móc. Dậm ở mỗi phách, nhấc giữa phách; đánh lưỡi khi sang nốt mới.",
     seq: [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 4], ["E4", 4], ["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 4], ["D4", 4], ["G4", 2], ["A4", 2], ["G4", 2], ["E4", 2], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["E4", 4], ["G4", 4], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["E4", 2], ["D4", 2], ["C4", 4]] },
   { id: "dencham", title: "Đen chấm", level: 3,
-    text: "Nốt đen chấm hát hết lần đập và thêm nửa nhấc đầu. Nốt móc cất tiếng vào nửa nhấc sau.",
-    seq: [["G4", 3], ["E4", 1], ["F4", 4], ["E4", 3], ["C4", 1], ["D4", 4]] },
+    text: "Nốt đen chấm dài một phách rưỡi. Nốt móc dưới cung luyến nối hơi, không bật lưỡi; nốt trắng sau đó đánh lưỡi ở đầu nốt.",
+    seq: [["G4", 3], ["E4", 1, "luyen"], ["F4", 4], ["E4", 3], ["C4", 1, "luyen"], ["D4", 4]] },
   { id: "gop", title: "Bài ghép", level: 3,
     text: "Đếm 1 2 3 4. Nốt mới thì đánh lưỡi đúng phách nó bắt đầu. Nốt dài thì giữ hơi qua các phách sau.",
     seq: [["C4", 2], ["E4", 2], ["G4", 4], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 3], ["C4", 1], ["E4", 2], ["D4", 2], ["C4", 2], ["D4", 2], ["E4", 8]] },
@@ -744,7 +846,7 @@ const PIECES = [
     text: "Nốt trắng đầu đánh lưỡi. Nốt trắng sau nằm trong cung luyến: ngân tiếp, không đánh lưỡi lần nữa.",
     seq: [["C4", 4], ["E4", 4, "luyen"], ["G4", 4], ["E4", 4, "luyen"], ["A4", 4], ["F4", 4, "luyen"], ["G4", 4], ["E4", 4, "luyen"], ["F4", 4], ["D4", 4, "luyen"], ["E4", 4], ["C4", 4, "luyen"], ["G4", 4], ["E4", 4, "luyen"], ["D4", 4], ["C4", 4, "luyen"]] },
   { id: "saodai", title: "Sáo tám ô", level: 2,
-    text: "Sheet dài cho sáo. Chỗ thanh đen thì đánh lưỡi. Chỗ thanh xanh và cung luyến thì nối hơi. Chân vẫn đập, nhấc suốt bản.",
+    text: "Bản dài cho sáo. Chỗ thanh đen thì đánh lưỡi. Chỗ thanh xanh và cung luyến thì nối hơi. Dậm ở đầu mỗi phách, nhấc giữa phách.",
     seq: [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["A4", 2], ["G4", 2], ["E4", 2], ["C4", 2], ["D4", 2, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 2], ["A4", 2, "luyen"], ["G4", 2], ["E4", 2, "luyen"], ["C4", 1], ["D4", 1, "luyen"], ["E4", 1, "luyen"], ["F4", 1, "luyen"], ["G4", 1], ["A4", 1, "luyen"], ["G4", 1, "luyen"], ["F4", 1, "luyen"], ["E4", 1], ["F4", 1, "luyen"], ["G4", 1, "luyen"], ["A4", 1, "luyen"], ["G4", 1], ["F4", 1, "luyen"], ["E4", 1, "luyen"], ["D4", 1, "luyen"], ["C4", 4], ["E4", 4, "luyen"], ["D4", 4], ["C4", 4, "luyen"]] },
   { id: "len", title: "Đi lên thang", level: 1,
     text: "Bản tập lưỡi đều. Mỗi nốt đen một lần đánh lưỡi, đúng phách. Đồ trên khuông là Đồ thấp của sáo C5.",
@@ -808,6 +910,83 @@ const PIECES = [
     seq: [["C4", 2], ["E4", 2], ["D4", 2], ["F4", 2], ["G4", 4], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 4], ["C4", 4]] }
 ];
 
+// Giai điệu dân ca/truyền thống và bài tập thiếu nhi quen thuộc, giản lược về Đô trưởng
+// cho sáo Đô. Mỗi chuỗi gồm 10 ô nhịp 4/4, 8 nốt đen/ô; sheet được chia thành 5 dòng.
+const SONG_LIBRARY = [
+  ["bac-kim-thang", "Bắc kim thang", [
+    "A4 G4 F4 C4 F4 G4 E4 E4", "E4 G4 C4 C4 C4 G4 E4 A4", "A4 C4 E4 D4 E4 A4 A4 A4",
+    "E4 E4 G4 A4 A4 A4 G4 E4", "F4 C4 E4 G4 E4 A4 G4 C4"]],
+  ["ly-cay-bong", "Lý cây bông", [
+    "D4 C4 D4 D4 C4 D4 F4 A4", "A4 C4 A4 C4 D4 C4 A4 C4", "D4 D4 C4 F4 C4 A4 C4 D4",
+    "C4 A4 C4 D4 G4 A4 C4 A4", "G4 F4 D4 F4 C4 D4 F4 C4"]],
+  ["trong-com", "Trống cơm", [
+    "G4 G4 C4 C4 D4 C4 G4 G4", "F4 G4 C4 G4 C4 C4 G4 F4", "G4 C4 C4 G4 F4 G4 C4 C4",
+    "D4 C4 D4 E4 E4 E4 G4 A4", "G4 A4 G4 A4 C4 C4 A4 G4"]],
+  ["beo-dat-may-troi", "Bèo dạt mây trôi", [
+    "C4 C4 G4 E4 F4 G4 A4 G4", "G4 E4 E4 E4 D4 E4 G4 C4", "C4 E4 D4 C4 A4 G4 G4 C4",
+    "E4 F4 G4 E4 E4 D4 E4 G4", "C4 E4 D4 C4 A4 G4 C4 C4"]],
+  ["inh-la-oi", "Inh lả ơi", [
+    "D4 A4 C4 D4 C4 A4 G4 G4", "D4 A4 G4 A4 D4 D4 C4 A4", "C4 A4 C4 G4 D4 D4 A4 G4",
+    "D4 A4 C4 D4 C4 A4 C4 C4", "D4 A4 C4 D4 C4 A4 G4 D4"]],
+  ["co-la", "Cò lả", [
+    "C4 G4 G4 C4 G4 C4 D4 C4", "G4 C4 C4 A4 G4 A4 G4 F4", "F4 C4 C4 G4 A4 G4 F4 C4",
+    "G4 G4 C4 D4 E4 D4 C4 G4", "A4 G4 F4 E4 D4 C4 C4 C4"]],
+  ["ly-cay-da", "Lý cây đa", [
+    "C4 D4 E4 G4 A4 G4 E4 D4", "C4 D4 E4 G4 E4 D4 C4 C4", "G4 A4 G4 E4 D4 E4 G4 A4",
+    "G4 E4 D4 C4 D4 E4 G4 E4", "D4 C4 D4 E4 D4 C4 C4 C4"]],
+  ["ode-to-joy", "Khải hoàn ca (Ode to Joy)", [
+    "E4 E4 F4 G4 G4 F4 E4 D4", "C4 C4 D4 E4 E4 D4 D4 D4", "E4 E4 F4 G4 G4 F4 E4 D4",
+    "C4 C4 D4 E4 D4 C4 C4 C4", "D4 D4 E4 C4 D4 E4 F4 E4"]],
+  ["frere-jacques", "Kìa con bướm vàng", [
+    "C4 D4 E4 C4 C4 D4 E4 C4", "E4 F4 G4 E4 F4 G4 G4 A4", "G4 F4 E4 C4 G4 F4 E4 C4",
+    "C4 G4 C4 C4 C4 G4 C4 C4", "E4 F4 G4 E4 C4 D4 E4 C4"]],
+  ["twinkle", "Twinkle Twinkle Little Star", [
+    "C4 C4 G4 G4 A4 A4 G4 G4", "F4 F4 E4 E4 D4 D4 C4 C4", "G4 G4 F4 F4 E4 E4 D4 D4",
+    "G4 G4 F4 F4 E4 E4 D4 D4", "C4 C4 G4 G4 A4 A4 G4 G4"]],
+  ["mary-lamb", "Mary Had a Little Lamb", [
+    "E4 D4 C4 D4 E4 E4 E4 E4", "D4 D4 D4 D4 E4 G4 G4 G4", "E4 D4 C4 D4 E4 E4 E4 E4",
+    "D4 D4 E4 D4 C4 C4 C4 C4", "E4 D4 C4 D4 E4 G4 E4 C4"]],
+  ["london-bridge", "London Bridge", [
+    "G4 A4 G4 F4 E4 F4 G4 G4", "A4 A4 A4 G4 A4 B4 C4 C4", "G4 A4 G4 F4 E4 F4 G4 G4",
+    "D4 E4 F4 E4 F4 G4 G4 G4", "G4 A4 G4 F4 E4 F4 G4 C4"]],
+  ["row-row", "Row Row Row Your Boat", [
+    "C4 C4 C4 D4 E4 E4 D4 E4", "F4 G4 C4 C4 C4 G4 G4 G4", "E4 E4 E4 C4 C4 C4 G4 G4",
+    "F4 E4 D4 C4 G4 F4 E4 D4", "C4 C4 C4 D4 E4 E4 D4 C4"]],
+  ["jingle-bells", "Jingle Bells", [
+    "E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4",
+    "F4 F4 F4 F4 F4 E4 E4 E4 E4 D4 D4 E4 D4 G4 E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4"]],
+  ["amazing-grace", "Amazing Grace", [
+    "G4 C4 E4 C4 E4 D4 C4 A4", "G4 C4 E4 C4 E4 D4 C4 G4", "E4 G4 E4 C4 A4 G4 E4 C4",
+    "G4 C4 E4 C4 E4 D4 C4 A4", "G4 C4 E4 C4 G4 E4 D4 C4"]],
+  ["when-saints", "When the Saints Go Marching In", [
+    "C4 E4 F4 G4 C4 E4 F4 G4", "C4 E4 F4 G4 E4 C4 E4 D4", "C4 C4 D4 E4 E4 D4 C4 D4",
+    "E4 E4 E4 C4 D4 E4 F4 G4", "C4 E4 F4 G4 E4 C4 D4 C4"]]
+].map(([id, title, bars]) => ({
+  id, title, level: 1,
+  text: "Bản tập giản lược cho sáo Đô, viết ở Đô trưởng. Một số cặp có cung luyến: nối hơi sang nốt sau, không bật lưỡi; các nốt ngoài cung đánh lưỡi ở đầu nốt. Chân vẫn đập đều theo phách.",
+  seq: bars.join(" ").trim().split(/\s+/).map((note, i) => [note, 2, i % 4 === 3 ? "luyen" : ""])
+}));
+PIECES.push(...SONG_LIBRARY);
+
+const STUDY_LIBRARY = [
+  ["study-long", "01 · Hơi đều trên một nốt", 1, "Giữ hơi êm, tiếng không phập phù; nghỉ lấy hơi giữa hai nốt.", [["C4", 8], ["C4", 8]]],
+  ["study-tongue", "02 · Lưỡi đơn chậm", 1, "Mỗi nốt bắt đầu bằng một âm t nhẹ; giữ tiếng liền và đều.", [["C4", 2], ["C4", 2], ["C4", 2], ["C4", 2], ["D4", 2], ["D4", 2], ["D4", 2], ["D4", 2]]],
+  ["study-scale", "03 · Thang Đô đi lên xuống", 1, "Đi từng bậc chậm, nhấc ngón gọn; đánh lưỡi ở đầu mỗi nốt.", [["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["A4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["D4", 2], ["C4", 4]]],
+  ["study-change", "04 · Đổi nốt không ngắt hơi", 1, "Giữ luồng hơi ổn định khi chuyển thế ngón; lưỡi chỉ bật ở nốt đầu mỗi cụm.", [["C4", 2], ["D4", 2], ["E4", 2], ["G4", 2], ["G4", 2], ["E4", 2], ["D4", 2], ["C4", 2]]],
+  ["study-leaps", "05 · Quãng ba liền tiếng", 2, "Chuyển quãng vừa phải, giữ hơi nối qua mỗi nốt.", [["C4", 2], ["E4", 2, "luyen"], ["D4", 2], ["F4", 2, "luyen"], ["E4", 2], ["G4", 2, "luyen"], ["F4", 2], ["A4", 2, "luyen"]]],
+  ["study-eighths", "06 · Hai nốt móc trong một phách", 2, "Nốt móc sau rơi vào lúc chân đang nhấc; lưỡi phát âm đúng đầu nốt.", [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 4]]],
+  ["study-slur-pairs", "07 · Luyến từng cặp", 2, "Chỉ đánh lưỡi nốt đầu; các nốt sau có cung luyến nối hơi, không bật lưỡi lại.", [["C4", 2], ["D4", 2, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 2], ["A4", 2, "luyen"], ["G4", 2], ["F4", 2, "luyen"]]],
+  ["study-slur-scale", "08 · Luyến thang âm", 2, "Luyến hai nốt một cụm; lấy hơi ở cuối câu, không ngắt giữa cung luyến.", [["C4", 2], ["D4", 2, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 2], ["A4", 2, "luyen"], ["G4", 2], ["F4", 2, "luyen"], ["E4", 2], ["D4", 2, "luyen"], ["C4", 4]]],
+  ["study-mix", "09 · Lưỡi đơn xen luyến", 2, "Đọc dấu cung trước: đầu cụm đánh lưỡi, nốt trong cung luyến nối hơi.", [["C4", 2], ["D4", 2, "luyen"], ["E4", 2], ["G4", 2], ["A4", 2, "luyen"], ["G4", 2], ["E4", 2, "luyen"], ["D4", 2], ["C4", 6]]],
+  ["study-dotted", "10 · Nốt đen chấm và móc đơn", 2, "Nốt đen chấm dài 1½ phách; nốt móc kế tiếp vào nửa phách sau.", [["C4", 3], ["D4", 1], ["E4", 3], ["F4", 1], ["G4", 4], ["E4", 4]]],
+  ["study-slur-dotted", "11 · Luyến qua nốt móc", 3, "Luyến từ nốt dài sang nốt móc; giữ nhịp chân đều và không đánh lưỡi nốt móc có dấu luyến.", [["C4", 3], ["D4", 1, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 3], ["A4", 1, "luyen"], ["G4", 4]]],
+  ["study-arpeggio", "12 · Hợp âm rải có luyến", 3, "Luyện nhảy quãng rộng hơn nhưng vẫn giữ hơi liền ở các cặp có cung luyến.", [["C4", 2], ["E4", 2, "luyen"], ["G4", 2], ["C4", 2, "luyen"], ["A4", 2], ["F4", 2, "luyen"], ["D4", 2], ["C4", 2, "luyen"]]],
+  ["study-long-slurs", "13 · Câu dài chia hơi", 3, "Giữ câu dài ổn định, đánh lưỡi nhẹ ở đầu cụm và nối các nốt trong cung luyến.", [["C4", 4], ["D4", 2, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 4], ["A4", 2, "luyen"], ["G4", 2], ["E4", 6, "luyen"]]],
+  ["study-fast", "14 · Tăng tốc có kiểm soát", 3, "Bắt đầu chậm; chỉ tăng BPM khi nốt rõ, đúng ngón và không hụt hơi.", [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["E4", 1], ["D4", 1], ["E4", 1], ["C4", 2]]],
+  ["study-capstone", "15 · Tổng hợp lưỡi, luyến, nốt chấm", 3, "Đọc dấu luyến và trường độ trước khi chơi; giữ chân theo phách dù giai điệu có nốt móc.", [["C4", 2], ["D4", 2, "luyen"], ["E4", 3], ["F4", 1], ["G4", 2], ["A4", 2, "luyen"], ["G4", 3], ["E4", 1, "luyen"], ["D4", 2], ["C4", 6, "luyen"]]]
+].map(([id, title, level, text, seq]) => ({ id, title, level, text, seq }));
+PIECES.push(...STUDY_LIBRARY);
+
 const PATTERNS = {
   1: [[2, 2, 2, 2], [4, 4], [4, 2, 2], [2, 2, 4], [8], [4, 4], [2, 2, 2, 2]],
   2: [[2, 2, 2, 2], [4, 2, 2], [6, 2], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 4], [4, 1, 1, 2], [2, 1, 1, 4], [1, 1, 1, 1, 4]],
@@ -817,6 +996,8 @@ const PATTERNS = {
 const saved = load();
 const state = {
   tab: "notes",
+  focusSong: "",
+  beat: { fileName: "", bpm: 0, key: "", duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
   practice: "name",
   level: saved.level || 1,
   extras: !!saved.extras,
@@ -932,7 +1113,7 @@ function beatPlan(notes) {
     const at = b * 2;
     const note = laid.items.find((n) => n.start <= at && at < n.start + n.e);
     plan.push({
-      motion: b % 2 === 0 ? "dap" : "nhac",
+      motion: "dap",
       tongue: !!(note && note.start === at && note.art !== "luyen"),
       slur: !!(note && note.start === at && note.art === "luyen")
     });
@@ -1217,8 +1398,7 @@ function paintFrame(f) {
   let pose = "rest";
   if (f.ready) pose = "rest";
   else if (idx >= 0 && (f.counting || step)) {
-    const motion = f.counting ? (idx % 2 === 0 ? "dap" : "nhac") : step.motion;
-    pose = motion === "nhac" ? "nhac" : "dap";
+    pose = frac >= 0.5 ? "nhac" : "dap";
   }
   stage.classList.remove("dap", "nhac", "dap-up");
   if (pose !== "rest") stage.classList.add(pose);
@@ -1232,12 +1412,15 @@ function paintFrame(f) {
     } else if (step && step.slurMid && frac > 0.45 && !step.tongue && !step.slur) {
       word.textContent = pose === "nhac" ? "Nhấc" : "Đập";
       beatEl.textContent = "Luyến, không đánh lưỡi";
-    } else if (step && step.tongueMid && frac > 0.45 && !step.tongue) {
+    } else if (step && step.tongueMid && frac >= 0.5 && !step.tongue) {
       word.textContent = pose === "nhac" ? "Nhấc" : "Đập";
       beatEl.textContent = "Đánh lưỡi giữa phách";
+    } else if (step && pose === "nhac" && (step.slur || step.tongueMid)) {
+      word.textContent = "Nhấc";
+      beatEl.textContent = step.slur ? "Luyến, không đánh lưỡi" : "Đánh lưỡi giữa phách";
     } else if (step && pose === "nhac") {
       word.textContent = "Nhấc";
-      beatEl.textContent = step.tongue ? "Về tư thế giơ, đánh lưỡi" : step.slur ? "Luyến, không đánh lưỡi" : "Về tư thế giơ, giữ hơi";
+      beatEl.textContent = "Giữa phách, giữ hơi";
     } else if (step) {
       word.textContent = "Đập";
       beatEl.textContent = step.tongue ? "Dậm xuống, đánh lưỡi" : step.slur ? "Luyến, không đánh lưỡi" : "Dậm xuống, giữ hơi";
@@ -1262,10 +1445,11 @@ function paintFrame(f) {
   document.querySelectorAll("#lamps i").forEach((el) => {
     const on = idx >= 0 && Number(el.dataset.i) === (idx % 4) && (f.counting || f.beatPos < f.totalBeats);
     el.classList.toggle("on", on);
+    el.classList.toggle("phase-up", on && pose === "nhac");
   });
   if (f.beatPos >= 0 && !lineListen.on) movePlayheads(f, idx);
   if (tapSession && state.hint && pose !== "rest") {
-    const due = pose === "nhac" ? "nhac" : "dap";
+    const due = "dap";
     document.querySelectorAll("[data-tap]").forEach((pad) => {
       pad.classList.toggle("due", pad.dataset.tap === due && (f.counting || (f.beatPos >= 0 && f.beatPos < f.totalBeats)));
     });
@@ -1340,7 +1524,7 @@ function idleFrame() {
   if (word && state.hint) { word.textContent = "Sẵn sàng"; beatEl.textContent = "Chân giơ"; }
   lampBar = -2;
   syncLamps(0);
-  document.querySelectorAll("#lamps i").forEach((el) => el.classList.remove("on"));
+  document.querySelectorAll("#lamps i").forEach((el) => el.classList.remove("on", "phase-up"));
   document.querySelectorAll(".playhead").forEach((el) => el.setAttribute("opacity", "0"));
   document.querySelectorAll(".time-fill").forEach((el) => el.setAttribute("width", "0"));
   document.querySelectorAll(".bcell.on, .bcell.soon, .nbar.on, .note.on").forEach((el) => el.classList.remove("on", "soon"));
@@ -1388,8 +1572,8 @@ function scoreSVG(notes, opt) {
   const systems = splitSystems(laid.items, laid.totalE);
   const left = opt.clef === false ? 28 : 156;
   const lineBeats = Math.max(1, ...systems.map((s) => (s.to - s.from) / 2));
-  let beatW = opt.compact ? 54 : (lineBeats <= 4 ? 100 : 78);
-  const maxW = 640;
+  const maxW = Math.max(320, opt.maxW || 640);
+  let beatW = opt.compact ? (opt.maxW ? Math.max(46, Math.floor((maxW - left - 28) / lineBeats)) : 54) : (lineBeats <= 4 ? 100 : 78);
   if (left + lineBeats * beatW + 28 > maxW) {
     beatW = Math.max(46, Math.floor((maxW - left - 28) / lineBeats));
   }
@@ -1621,7 +1805,7 @@ function syncLamps(bar) {
   lampBar = bar;
   lamps.forEach((el, i) => {
     const counting = bar < 0;
-    const step = counting ? { motion: i % 2 === 0 ? "dap" : "nhac" } : (statePlan[bar * 4 + i] || null);
+    const step = counting ? { motion: "dap" } : (statePlan[bar * 4 + i] || null);
     const num = counting ? i + 1 : bar * 4 + i + 1;
     el.classList.remove("m-dap", "m-nhac");
     if (!step) {
@@ -1630,14 +1814,14 @@ function syncLamps(bar) {
     }
     const motion = step.motion === "nhac" ? "nhac" : "dap";
     el.classList.add(motion === "nhac" ? "m-nhac" : "m-dap");
-    el.innerHTML = `<b>${num}</b>${motion === "nhac" ? "Nhấc" : "Đập"}`;
+    el.innerHTML = `<b>${num}</b><span class="lamp-down">↓ Đập</span><span class="lamp-up">↑ Nhấc</span>`;
   });
 }
 function footHTML() {
   const lamps = [0, 1, 2, 3].map((i) => {
     const step = statePlan[i];
-    const word = !step ? "·" : step.motion === "nhac" ? "Nhấc" : "Đập";
-    const motion = step && step.motion === "nhac" ? "nhac" : "dap";
+    const word = !step ? "·" : `<span class="lamp-down">↓ Đập</span><span class="lamp-up">↑ Nhấc</span>`;
+    const motion = "dap";
     return `<i data-i="${i}" class="${step ? "m-" + motion : ""}"><b>${i + 1}</b>${word}</i>`;
   }).join("");
   return `
@@ -1656,11 +1840,11 @@ function footHTML() {
 }
 function mountScore(notes, opt) {
   const view = scoreSVG(notes, opt);
-  return `<div class="score-scroll ${state.hint ? "" : "assist-off"}" id="scoreHost" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
+  return `<div class="score-scroll ${opt.fullSheet ? "full-sheet" : ""} ${state.hint ? "" : "assist-off"}" id="scoreHost" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
-function previewScore(notes, pieceId) {
+function previewScore(notes, pieceId, fullSheet = false) {
   const view = scoreSVG(notes, { lane: true, time: true, clef: true });
-  return `<div class="score-scroll preview" data-piece="${esc(pieceId || "")}" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
+  return `<div class="score-scroll preview ${fullSheet ? "full-sheet" : ""}" data-piece="${esc(pieceId || "")}" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
 function lineButtonText(btn, running) {
   if (btn.dataset.line === "all") return running ? "Dừng" : "Tập " + btn.dataset.count + " nốt";
@@ -1705,12 +1889,12 @@ function demoNotes() {
 function demoCaption() {
   if (state.demo.kind === "piece") return PIECES.find((x) => x.id === state.demo.id).text;
   const r = RHYTHMS.find((x) => x.id === state.demo.id);
-  if (r.id === "q") return "Nốt đen dài đúng một phách. Phách 1 và 3 chân dậm, phách 2 và 4 chân nhấc. Nốt nào cũng đánh lưỡi một lần lúc bắt đầu thổi. Dậm rồi nhấc, nếu cả hai lần đều đánh lưỡi, là hai nốt đen.";
-  if (r.id === "h") return "Nốt trắng dài hai phách. Thổi một hơi: đánh lưỡi ở phách đầu, giữ hơi sang phách sau, không đánh lưỡi lần nữa. Bắt đầu ở phách 1 thì là đập rồi nhấc.";
-  if (r.id === "w") return "Nốt tròn dài cả ô: đập, nhấc, đập, nhấc. Chỉ đánh lưỡi ở phách 1, ba phách sau giữ hơi.";
-  if (r.id === "dh") return "Nốt trắng chấm dài ba phách: đập, nhấc, đập. Đánh lưỡi ở phách đầu. Nốt đen còn lại thường rơi vào phách nhấc, và nốt đó vẫn đánh lưỡi.";
-  if (r.id === "e") return "Hai nốt móc đơn cộng lại bằng một phách. Chân chỉ dậm hoặc chỉ nhấc một lần, lưỡi đánh hai tiếng.";
-  if (r.id === "dq") return "Nốt đen chấm dài một phách rưỡi: hết một đập và nửa nhấc. Nốt móc phía sau đánh lưỡi vào nửa nhấc còn lại.";
+  if (r.id === "q") return "Nốt đen dài đúng một phách. Dậm chân và đánh lưỡi ở đầu nốt; nhấc chân giữa phách. Nốt đen kế tiếp bắt đầu ở phách kế tiếp và có tiếng lưỡi mới.";
+  if (r.id === "h") return "Nốt trắng dài hai phách. Đánh lưỡi ở đầu nốt, giữ hơi qua phách thứ hai. Dậm ở đầu mỗi phách, nhấc chân ở quãng giữa.";
+  if (r.id === "w") return "Nốt tròn dài cả ô. Chỉ đánh lưỡi ở đầu nốt; giữ hơi qua bốn phách, dậm ở đầu mỗi phách và nhấc chân ở giữa.";
+  if (r.id === "dh") return "Nốt trắng chấm dài ba phách. Đánh lưỡi ở đầu nốt, giữ hơi qua ba phách. Nốt đen kế tiếp bắt đầu ở phách mới nên đánh lưỡi lần nữa.";
+  if (r.id === "e") return "Hai nốt móc đơn cộng lại bằng một phách. Chân dậm ở đầu phách rồi nhấc giữa phách; lưỡi bật hai tiếng đều nhau.";
+  if (r.id === "dq") return "Nốt đen chấm dài một phách rưỡi. Giữ tiếng qua phách kế tiếp và thêm nửa phách; nốt móc sau bắt đầu giữa phách nên đánh lưỡi ở đó.";
   return r.name + " — " + r.phrase + ".";
 }
 
@@ -1936,7 +2120,10 @@ function paintNotes() {
       <div class="note-main">
         <div class="card note-staff">
           ${mountScore(shown, { map: true, clef: true, time: false, lane: false, color: true, selected: note.id, guidePos: note.pos })}
-          <p class="foot-note">Bấm một nốt để nghe. «Hiện cao độ 2 và 3» thêm Đồ 2 đến Si 2, rồi Đồ 3 đến Son 3. Phím 1 đến ${Math.min(8, scale.length)} chọn từ Đồ thấp.</p>
+          <p class="foot-note">Chọn nốt để xem vị trí và thế ngón. Luyện nhận diện bằng cách chọn đáp án, không cần bật mic.</p>
+          <div class="row note-quiz-cta">
+            <button type="button" class="btn primary" data-act="goto-quiz">Luyện nhận diện nốt</button>
+          </div>
         </div>
         <div class="card detail">
           <h2 style="color:${COLORS[note.id]}">${esc(note.name)}${note.oct ? ` <span class="aka">· cao độ ${note.oct}</span>` : ""}${note.aka ? ` <span class="aka">· còn gọi là ${esc(note.aka)}</span>` : ""}</h2>
@@ -1946,7 +2133,6 @@ function paintNotes() {
           ${rhymeHTML(note)}
           <div class="row">
             <button type="button" class="btn primary" data-act="hear-note">Nghe lại</button>
-            <button type="button" class="btn" data-act="goto-quiz">Đố nốt này</button>
           </div>
         </div>
       </div>
@@ -1955,9 +2141,7 @@ function paintNotes() {
 }
 
 function pieceTabLabel(p, i) {
-  const n = "Tab " + (i + 1);
-  if ([...String(p.title)].length <= 12) return n + " · " + p.title;
-  return n;
+  return p.title;
 }
 function drillShelf(id) {
   return id === "ngon" || id === "de" || id === "vua" || id === "den" || id === "trang" || id === "moc" || id === "tron";
@@ -2023,7 +2207,7 @@ function paintRhythm() {
       return `<button type="button" class="btn ${p.id === piece.id ? "on" : ""}" data-act="shelf-piece" data-id="${p.id}" title="${esc(p.title)}">${esc(pieceTabLabel(p, i))}</button>`;
     }).join("");
     const mix = drillShelf(shelf.id) ? `<button type="button" class="btn" data-act="mix-piece">Trộn bài mới</button>` : "";
-    body = `<div class="sheet-rest">
+    body = `<div class="sheet-rest ${shelf.id === "songs" ? "songs-mode" : ""}">
       <div class="piece-tabs">${groupTabs}</div>
       ${shelf.note ? `<p class="foot-note">${esc(shelf.note)}</p>` : ""}
       <div class="piece-tabs nums">${pieceTabs}${mix}</div>
@@ -2034,20 +2218,24 @@ function paintRhythm() {
             <p class="piece-blurb">${esc(piece.text)}</p>
           </div>
           <div class="row" style="margin:0">
+            ${shelf.id === "songs" ? `<button type="button" class="btn" data-act="focus-song" data-id="${piece.id}">Sheet toàn màn hình</button>` : ""}
             <button type="button" class="btn" data-act="hear-piece" data-id="${piece.id}">Nghe</button>
             <button type="button" class="btn" data-act="tap-piece" data-id="${piece.id}">Tập đập</button>
           </div>
         </div>
-        ${previewScore(resolve(piece.seq), piece.id)}
+        ${previewScore(resolve(piece.seq), piece.id, shelf.id === "songs")}
         ${linePracticeBar(resolve(piece.seq), piece.id)}
       </div></div>
     </div>`;
   }
-  return `<div class="sheet"><div class="piece-tabs pane-tabs">${paneTabs}</div>${body}</div>`;
+  return `<div class="sheet ${pane === "bai" && state.shelf === "songs" ? "songs-mode" : ""}"><div class="piece-tabs pane-tabs">${paneTabs}</div>${body}</div>`;
 }
 
 function pieceGroups() {
   return [
+    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Mỗi sheet dài khoảng 5–7 dòng khuông; bấm Nghe để nghe cả bài hoặc Tập dòng để luyện từng dòng." },
+    { id: "study", title: "Lộ trình 15 bài", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn theo tiến trình từ hơi và lưỡi đơn đến chạy ngón, luyến, nốt chấm và tổng hợp. Các cung luyến đánh dấu nốt sau để nhắc nối hơi, không bật lưỡi." },
+    { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
     { id: "kythuat", title: "Kỹ thuật", ids: ["laybai", "vobai", "rungbai", "nhanbai"], note: "Láy, vỗ, rung, nhấn. Bấm Tập dòng rồi thổi. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong một dòng." },
     { id: "ngon", title: "Chạy ngón", ids: ["ngonmoc", "ngon3", "ngonthang", "ngonvong", "ngonbon"], note: "Từ ngón liền đến lỗ nửa cung. Lỗ tô đậm là bịt, lỗ trắng là mở." },
@@ -2162,7 +2350,7 @@ function melodyFrom(pattern, scale) {
 function paintPractice() {
   const levels = [1, 2, 3].map((n) => `<button type="button" class="btn ${state.level === n ? "on" : ""}" data-act="level" data-level="${n}">${n === 1 ? "Dễ" : n === 2 ? "Vừa" : "Khá"}</button>`).join("");
   const modes = [
-    ["name", "Nhận nốt"],
+    ["name", "Nhận diện nốt"],
     ["value", "Nhận phách"],
     ["read", "Đọc ô nhịp"],
     ["tap", "Đập chân"],
@@ -2176,7 +2364,8 @@ function paintPractice() {
     body = paintQuestion();
   }
   const levelRow = state.practice === "tap" || state.practice === "doi" ? "" : `<div class="seg">${levels}</div>`;
-  return `<div class="practice-fit"><div class="seg">${modes}</div>${levelRow}${body}</div>`;
+  const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
+  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${levelRow}${body}</div>`;
 }
 function paintPairs() {
   const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
@@ -2216,7 +2405,7 @@ function paintQuestion() {
     <p class="feedback" id="feedback"></p>
     <div class="row">
       <button type="button" class="btn" data-act="hear-quiz">Nghe</button>
-      ${state.practice === "name" ? `<button type="button" class="btn ${quizListen.on ? "primary" : ""}" id="quizMic" data-act="quiz-mic">${quizListen.on ? "Tắt mic" : "Thổi trả lời"}</button>` : ""}
+      ${state.practice === "name" ? `<button type="button" class="btn ${quizListen.on ? "primary" : ""}" id="quizMic" data-act="quiz-mic">${quizListen.on ? "Tắt mic" : "Thổi nốt (tùy chọn)"}</button>` : ""}
     </div>
   </div>`;
 }
@@ -2237,7 +2426,8 @@ function paintTap() {
     <div class="card">
       <div class="piece-tabs">${groupTabs}</div>
       <div class="piece-tabs nums">${pieceTabs}${mix}</div>
-      ${mountScore(notes, { lane: true, time: true })}
+      ${shelf.id === "songs" ? `<button type="button" class="btn" data-act="focus-song" data-id="${piece.id}">Sheet toàn màn hình</button>` : ""}
+      ${mountScore(notes, { lane: true, time: true, fullSheet: shelf.id === "songs" })}
       <p>${esc(piece.text)}</p>
       <p class="live" id="liveScore"></p>
       <div id="tapResult"></div>
@@ -2245,13 +2435,12 @@ function paintTap() {
     <div class="card">
       ${footHTML()}
       <div class="pads">
-        <button type="button" class="pad nhac" data-tap="nhac">NHẤC<small>mũi tên lên</small></button>
-        <button type="button" class="pad dap" data-tap="dap">ĐẬP<small>mũi tên xuống</small></button>
+        <button type="button" class="pad dap" data-tap="dap">ĐẬP ↓ · NHẤC ↑<small>dậm ở đầu phách, nhấc chân ở giữa phách</small></button>
       </div>
       <div class="row">
         <button type="button" class="btn primary" id="playBtn" data-act="start-tap">Bắt đầu</button>
       </div>
-      <p class="keys">Chân giơ là sẵn sàng. Đếm 1 đập, 2 nhấc, 3 đập, 4 nhấc. Mũi tên xuống là đập, mũi tên lên là nhấc.</p>
+      <p class="keys">Dậm ở đầu mỗi phách, nhấc chân ở nửa sau. Nốt đen đánh lưỡi lúc dậm; nốt móc bắt đầu ở nửa phách thì đánh lưỡi lúc chân đang nhấc. Dùng phím ↓ hoặc J để luyện cú dậm.</p>
     </div>
   </div>`;
 }
@@ -2323,6 +2512,10 @@ function paintBreath() {
     </div>`).join("");
   return `
     <div class="breath-fit">
+    <div class="scorebox" id="breathScore">
+      <p class="sum">Chưa chấm</p>
+      <p>Thổi đúng nốt đang chọn, một hơi. Dừng khoảng 3–4 giây thì hết lượt. Thổi lại sau đó là lượt mới.</p>
+    </div>
     <div class="breath-main">
       <div class="card breath-side">
         <div class="breath-id">
@@ -2360,10 +2553,6 @@ function paintBreath() {
         <canvas id="breathTrace" width="720" height="72"></canvas>
         <p class="foot-note" id="breathLevel">Mức hơi: 0%.</p>
       </div>
-    </div>
-    <div class="scorebox" id="breathScore">
-      <p class="sum">Chưa chấm</p>
-      <p>Thổi đúng nốt đang chọn, một hơi. Dừng khoảng 3–4 giây thì hết lượt. Thổi lại sau đó là lượt mới.</p>
     </div>
     <div class="card breath-rails">${rails}</div>
     </div>`;
@@ -2964,7 +3153,7 @@ async function startQuizListen() {
     const fb = document.getElementById("feedback");
     if (fb) { fb.textContent = "Trình duyệt chưa cho dùng mic."; fb.className = "feedback bad"; }
     const btn = document.getElementById("quizMic");
-    if (btn) { btn.textContent = "Thổi trả lời"; btn.classList.remove("primary"); }
+    if (btn) { btn.textContent = "Thổi nốt (tùy chọn)"; btn.classList.remove("primary"); }
     return;
   }
   if (token !== quizListen.token) return;
@@ -3156,8 +3345,10 @@ function paint() {
     quizListen.ignoreUntil = performance.now() + 400;
   } else stopQuizListen();
   const app = document.getElementById("app");
-  if (state.tab === "notes") app.innerHTML = paintNotes();
+  if (state.focusSong) app.innerHTML = paintSongFocus();
+  else if (state.tab === "notes") app.innerHTML = paintNotes();
   else if (state.tab === "rhythm") app.innerHTML = paintRhythm();
+  else if (state.tab === "beat") app.innerHTML = paintBeatTool();
   else if (state.tab === "breath") {
     breath.hist = [];
     breath.samples = [];
@@ -3171,6 +3362,8 @@ function paint() {
     syncBreathAudio();
   }
   else app.innerHTML = paintPractice();
+  const beatPlayer = document.getElementById("beatPlayer");
+  if (beatPlayer && state.beat.audioUrl) beatPlayer.src = state.beat.audioUrl;
   document.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === state.tab));
   document.querySelectorAll(".score-scroll").forEach((el) => el.classList.toggle("assist-off", !state.hint));
   const stage = document.getElementById("stage");
@@ -3179,6 +3372,137 @@ function paint() {
   watchScores();
   requestAnimationFrame(fitScores);
 }
+function paintSongFocus() {
+  const piece = PIECES.find((p) => p.id === state.focusSong) || SONG_LIBRARY[0];
+  state.focusSong = piece.id;
+  const maxW = Math.max(320, Math.min(1800, window.innerWidth - 28));
+  const score = scoreSVG(resolve(piece.seq), { lane: false, time: true, clef: true, compact: true, fullSheet: true, maxW });
+  return `<section class="song-focus" aria-label="Sheet nhạc toàn màn hình">
+    <header class="song-focus-head"><div><h2>${esc(piece.title)}</h2><p>${esc(piece.text)}</p></div><button type="button" class="song-focus-close" data-act="close-song-focus" aria-label="Đóng sheet, về trang chủ">×</button></header>
+    <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Nghe bài</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label></div>
+    <div id="scoreHost" class="score-scroll full-sheet fit-viewport song-focus-score">${score.html}</div>
+  </section>`;
+}
+function paintBeatTool() {
+  const b = state.beat;
+  const embedId = youtubeId(b.url);
+  const analyzed = b.buffer ? `<div class="beat-result"><p><strong>${esc(b.fileName)}</strong> · dài ${Math.floor(b.duration / 60)}:${String(Math.floor(b.duration % 60)).padStart(2, "0")}</p><p>Tempo ước lượng: <strong>${b.bpm || "chưa rõ"} BPM</strong> · tông ước lượng: <strong>${esc(b.key || "chưa rõ")}</strong></p><p>${esc(b.recommendation)}</p></div><audio class="beat-player" id="beatPlayer" controls></audio>` : `<p id="beatStatus">Chọn tệp âm thanh để phân tích nhịp và tông.</p>`;
+  return `<section class="beat-tool">
+    <div class="card"><h2>Phân tích beat cho sáo</h2><p>Chọn beat bạn có quyền sử dụng. Trang này phân tích trực tiếp tệp âm thanh trên thiết bị, không tải tệp lên máy chủ.</p>
+      <label for="beatFile">Tệp âm thanh (MP3, WAV, M4A, OGG)</label><p><input id="beatFile" type="file" accept="audio/*"></p>
+      <label for="youtubeUrl">Link YouTube để tham chiếu / nghe</label><p><input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=…" value="${esc(b.url)}"></p>
+      ${embedId ? `<iframe title="Nghe beat YouTube" width="100%" height="180" src="https://www.youtube-nocookie.com/embed/${embedId}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe><p>Trình duyệt không cho đọc trực tiếp luồng âm thanh YouTube để phân tích. Hãy chọn thêm tệp âm thanh hợp pháp của beat để đo tự động.</p>` : `<p>Link YouTube chỉ dùng để tham chiếu; trình duyệt chặn phân tích luồng âm thanh trực tiếp từ YouTube.</p>`}
+      <div class="row"><button type="button" class="btn" data-act="analyze-beat">Phân tích lại</button><button type="button" class="btn" data-act="play-beat">Nghe tệp</button></div>${analyzed}
+    </div>
+    <div class="card"><h2>Chỉnh beat cho sáo</h2><p>Chọn quãng chuyển tông và tốc độ. Đổi tốc độ bằng cách đổi cao độ sẽ làm tempo đổi theo; đây là cách xuất đơn giản, chưa phải time-stretch giữ nguyên tông.</p>
+      <label for="fluteKey">Sáo dự định thổi</label><p><select id="fluteKey"><option value="0" ${Number(b.instrumentKey) === 0 ? "selected" : ""}>Sáo Đô (C)</option><option value="2" ${Number(b.instrumentKey) === 2 ? "selected" : ""}>Sáo Rê (D)</option><option value="7" ${Number(b.instrumentKey) === 7 ? "selected" : ""}>Sáo Sol (G)</option></select></p>
+      <label for="beatTranspose">Chuyển tông (nửa cung)</label><p><input id="beatTranspose" type="number" min="-12" max="12" step="1" value="${b.semitones}"></p>
+      <label for="beatSpeed">Tốc độ phát / BPM mới: <strong id="beatSpeedText">${b.speed}% · ${b.bpm ? Math.round(b.bpm * b.speed / 100) : "—"} BPM</strong></label><p><input id="beatSpeed" type="range" min="70" max="130" step="1" value="${b.speed}"></p>
+      <div class="row"><button type="button" class="btn primary" data-act="recommend-beat">Gợi ý tông sáo Đô</button><button type="button" class="btn" data-act="export-beat">Xuất WAV chất lượng cao</button></div>
+      <p class="quality-tip">Để giữ chất lượng: dùng nguồn lossless/WAV hoặc bản tải hợp pháp chất lượng cao; tránh chuyển MP3 qua lại nhiều lần. Xuất WAV 24-bit ở tần số mẫu gốc giúp hạn chế suy hao thêm, nhưng không thể khôi phục chi tiết đã mất trong nguồn nén.</p>
+    </div>
+  </section>`;
+}
+function youtubeId(url) {
+  try { const u = new URL(url); const host = u.hostname.toLowerCase(); let id = ""; if (host === "youtu.be") id = u.pathname.slice(1).split("/")[0]; else if (host === "youtube.com" || host.endsWith(".youtube.com")) id = u.searchParams.get("v") || u.pathname.match(/\/embed\/([^/?]+)/)?.[1] || ""; return /^[\w-]{11}$/.test(id) ? id : ""; }
+  catch (err) { return ""; }
+  return "";
+}
+function estimateBeatAndKey(buffer) {
+  const rate = buffer.sampleRate;
+  const length = Math.min(buffer.length, rate * 120);
+  const mono = new Float32Array(length);
+  for (let c = 0; c < buffer.numberOfChannels; c++) { const data = buffer.getChannelData(c); for (let i = 0; i < length; i++) mono[i] += data[i] / buffer.numberOfChannels; }
+  const hop = 256, frame = 1024, flux = [];
+  let prev = 0;
+  for (let at = 0; at + frame < length; at += hop) { let sum = 0; for (let i = 0; i < frame; i += 4) sum += mono[at + i] * mono[at + i]; const rms = Math.sqrt(sum / (frame / 4)); flux.push(Math.max(0, rms - prev)); prev = rms; }
+  const fps = rate / hop;
+  let bestBpm = 0, bestScore = -1;
+  for (let bpm = 55; bpm <= 180; bpm++) { const lag = Math.round(fps * 60 / bpm); let score = 0; for (let i = lag; i < flux.length; i++) score += flux[i] * flux[i - lag]; if (score > bestScore) { bestScore = score; bestBpm = bpm; } }
+  if (bestBpm > 100 && bestBpm / 2 >= 55) bestBpm = Math.round(bestBpm / 2);
+  const sampleRate = Math.min(rate, 11025), stride = Math.max(1, Math.round(rate / sampleRate)), sample = [];
+  const segment = Math.min(Math.floor(sampleRate * 1.5), Math.floor(length / stride));
+  for (let at = 0; at + segment < length / stride && sample.length < 8; at += segment) {
+    const data = new Float32Array(segment); for (let i = 0; i < segment; i++) data[i] = mono[(at + i) * stride]; sample.push(data);
+  }
+  const chroma = Array(12).fill(0); const frequencies = [];
+  for (let midi = 36; midi <= 83; midi++) frequencies.push({ midi, hz: 440 * 2 ** ((midi - 69) / 12) });
+  sample.forEach((data) => frequencies.forEach(({ midi, hz }) => {
+    const coeff = 2 * Math.cos(2 * Math.PI * hz / sampleRate); let q0 = 0, q1 = 0, q2 = 0;
+    const step = Math.max(1, Math.floor(data.length / 4096));
+    for (let i = 0; i < data.length; i += step) { q0 = coeff * q1 - q2 + data[i]; q2 = q1; q1 = q0; }
+    chroma[midi % 12] += Math.max(0, q1 * q1 + q2 * q2 - coeff * q1 * q2);
+  }));
+  const major = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88], names = ["Đô", "Đô thăng", "Rê", "Mi giáng", "Mi", "Fa", "Fa thăng", "Sol", "La giáng", "La", "Si giáng", "Si"];
+  const norm = Math.sqrt(chroma.reduce((s, x) => s + x * x, 0)) || 1; let keyIdx = 0, keyScore = -Infinity;
+  for (let root = 0; root < 12; root++) { let s = 0, n = 0; for (let i = 0; i < 12; i++) { const v = chroma[(root + i) % 12] / norm; s += v * major[i]; n += major[i]; } if (s / n > keyScore) { keyScore = s / n; keyIdx = root; } }
+  return { bpm: bestBpm, key: names[keyIdx], keyIdx };
+}
+async function loadBeatFile(file) {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) { toast("Trình duyệt này chưa hỗ trợ phân tích âm thanh", "bad"); return; }
+  const status = document.getElementById("beatStatus"); if (status) status.textContent = "Đang đọc và phân tích tệp…";
+  try {
+    const ctx = new AC();
+    const buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+    await ctx.close();
+    const result = estimateBeatAndKey(buffer);
+    state.beat.buffer = buffer;
+    state.beat.fileName = file.name;
+    state.beat.duration = buffer.duration;
+    state.beat.bpm = result.bpm;
+    state.beat.key = result.key + " trưởng (ước lượng)";
+    state.beat.keyIdx = result.keyIdx;
+    state.beat.audioUrl = URL.createObjectURL(file);
+    state.beat.recommendation = `Phân tích gần đúng: ${state.beat.key}. Có thể thử chuyển tông ${result.keyIdx ? "về Đô trưởng" : "giữ nguyên Đô trưởng"}; nghe thử để kiểm tra vì beat có thể ở giọng thứ hoặc hòa âm phức tạp.`;
+    go();
+    const player = document.getElementById("beatPlayer"); if (player) player.src = state.beat.audioUrl;
+  } catch (err) {
+    if (status) status.textContent = "Không đọc được định dạng này. Hãy thử WAV hoặc MP3.";
+    console.error("beat decode", err);
+  }
+}
+function recommendedSemitones() {
+  const root = Number(state.beat.keyIdx || 0);
+  const target = Number(state.beat.instrumentKey || 0);
+  let shift = (target - root + 12) % 12;
+  if (shift > 6) shift -= 12;
+  return shift;
+}
+function bufferToWav24(buffer) {
+  const channels = buffer.numberOfChannels, frames = buffer.length;
+  const bytes = 3, dataSize = frames * channels * bytes;
+  const out = new ArrayBuffer(44 + dataSize), view = new DataView(out);
+  const write = (at, s) => { for (let i = 0; i < s.length; i++) view.setUint8(at + i, s.charCodeAt(i)); };
+  write(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); write(8, "WAVE"); write(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, channels, true);
+  view.setUint32(24, buffer.sampleRate, true); view.setUint32(28, buffer.sampleRate * channels * bytes, true);
+  view.setUint16(32, channels * bytes, true); view.setUint16(34, 24, true); write(36, "data"); view.setUint32(40, dataSize, true);
+  const data = Array.from({ length: channels }, (_, c) => buffer.getChannelData(c)); let at = 44;
+  for (let i = 0; i < frames; i++) for (let c = 0; c < channels; c++) {
+    const s = Math.max(-1, Math.min(1, data[c][i])); let v = Math.round(s < 0 ? s * 8388608 : s * 8388607);
+    if (v < 0) v += 16777216;
+    view.setUint8(at++, v & 255); view.setUint8(at++, (v >> 8) & 255); view.setUint8(at++, (v >> 16) & 255);
+  }
+  return new Blob([out], { type: "audio/wav" });
+}
+async function exportAdjustedBeat() {
+  const b = state.beat;
+  if (!b.buffer) { toast("Chọn tệp beat trước", "bad"); return; }
+  const semitones = Math.max(-12, Math.min(12, Number(b.semitones) || 0));
+  const speed = Math.max(70, Math.min(130, Number(b.speed) || 100)) / 100;
+  const ratio = 2 ** (semitones / 12) * speed;
+  const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!Offline) { toast("Trình duyệt chưa hỗ trợ xuất WAV", "bad"); return; }
+  toast("Đang dựng WAV…");
+  const sampleRate = b.buffer.sampleRate, length = Math.ceil(b.buffer.length / ratio);
+  const ctx = new Offline(b.buffer.numberOfChannels, length, sampleRate);
+  const src = ctx.createBufferSource(); src.buffer = b.buffer; src.playbackRate.value = ratio; src.connect(ctx.destination); src.start();
+  const rendered = await ctx.startRendering();
+  const blob = bufferToWav24(rendered), link = document.createElement("a");
+  link.href = URL.createObjectURL(blob); link.download = `${b.fileName.replace(/\.[^.]+$/, "")}-sao-${semitones >= 0 ? "+" : ""}${semitones}.wav`;
+  link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+}
 function fitScores() {
   if (fitScores.lock) return;
   fitScores.lock = true;
@@ -3186,6 +3510,45 @@ function fitScores() {
     document.querySelectorAll(".score-scroll").forEach((host) => {
       const all = [...host.querySelectorAll(":scope > svg.staff")];
       if (!all.length) return;
+      if (host.classList.contains("fit-viewport")) {
+        all.forEach((svg) => { svg.style.display = "block"; });
+        host.parentElement?.querySelector(":scope > .line-switch")?.remove();
+        const cs = getComputedStyle(host);
+        const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        const availW = host.clientWidth - padX, availH = host.clientHeight - padY;
+        if (availW < 80 || availH < 80) return;
+        const dims = all.map((svg) => [Number(svg.getAttribute("width")), Number(svg.getAttribute("height"))]);
+        const naturalW = Math.max(...dims.map((d) => d[0]));
+        const naturalH = dims.reduce((s, d) => s + d[1], 0) + Math.max(0, all.length - 1) * 2;
+        const scale = Math.min(availW / naturalW, availH / naturalH);
+        all.forEach((svg, i) => {
+          if (dims[i][0] < 20 || dims[i][1] < 20) return;
+          svg.style.width = Math.floor(dims[i][0] * scale) + "px";
+          svg.style.height = Math.floor(dims[i][1] * scale) + "px";
+          svg.style.maxHeight = "none";
+        });
+        return;
+      }
+      if (host.classList.contains("full-sheet")) {
+        all.forEach((svg) => { svg.style.display = "block"; });
+        host.dataset.page = "0";
+        host.parentElement?.querySelector(":scope > .line-switch")?.remove();
+        const cs = getComputedStyle(host);
+        const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const availW = host.clientWidth - padX;
+        if (availW < 80) return;
+        all.forEach((svg) => {
+          const natW = Number(svg.getAttribute("width"));
+          const natH = Number(svg.getAttribute("height"));
+          if (natW < 20 || natH < 20) return;
+    const scale = Math.min(1, availW / natW);
+          svg.style.width = Math.floor(natW * scale) + "px";
+          svg.style.height = Math.floor(natH * scale) + "px";
+          svg.style.maxHeight = "none";
+        });
+        return;
+      }
       let page = 0;
       if (host.closest(".note-staff")) {
         const sel = host.querySelector(".note.sel");
@@ -3277,7 +3640,7 @@ function updateLive() {
   const done = tapSession.points.length;
   const total = tapSession.targets.length;
   const good = tapSession.points.filter((p) => p === "good" || p === "close").length;
-  el.textContent = `Đã qua ${done}/${total} cử động · đúng chân ${good}`;
+  el.textContent = `Đã qua ${done}/${total} phách · đúng nhịp ${good}`;
 }
 function markBeat(target, kind) {
   const cell = document.querySelector(`.bcell[data-beat="${target.beat}"]`);
@@ -3346,11 +3709,11 @@ function finishTap() {
   const box = document.getElementById("tapResult");
   if (!box) return;
   const tip = wrong
-    ? "Phách 1 và 3 thì dậm, phách 2 và 4 thì nhấc. Nốt đen ở phách nhấc vẫn phải nhấc, và vẫn đánh lưỡi."
+    ? "Dậm xuống ở mỗi tiếng đếm; chân nhấc giữa hai phách. Bật lưỡi đúng đầu nốt mới."
     : good === total
-      ? "Đủ đập và nhấc. Giữ đúng độ đều này rồi tăng tốc độ lên một chút."
-      : "Chân đúng hướng. Chỉnh cho mỗi cử động khớp tiếng phách hơn.";
-  box.innerHTML = `<p class="sum">${good}/${total} cử động đúng chân</p><p>${tip}</p>`;
+      ? "Đủ các phách và đều nhịp. Giữ đúng độ đều này rồi tăng tốc độ lên một chút."
+      : "Chân đúng hướng. Chỉnh mỗi lần dậm khớp tiếng phách hơn.";
+  box.innerHTML = `<p class="sum">${good}/${total} phách đúng nhịp</p><p>${tip}</p>`;
   const btn = document.getElementById("playBtn");
   if (btn) btn.textContent = "Đập lại";
 }
@@ -3411,7 +3774,7 @@ function placeOf(startE) {
   const beat = Math.floor(startE / 2);
   const num = (beat % 4) + 1;
   if (startE % 2 === 1) return "nửa sau phách " + num;
-  return "phách " + num + ", lúc " + (beat % 2 === 0 ? "đập" : "nhấc");
+  return "phách " + num + ", lúc dậm";
 }
 function gradeLine(notes, fromE, toE, samples, beatDur) {
   const items = layout(notes).items.filter((n) => n.start >= fromE && n.start < toE);
@@ -3872,10 +4235,30 @@ async function startPairListen() {
 
 const actions = {
   tab(el) {
+    if (state.focusSong) return;
     state.tab = el.dataset.tab;
     if (state.tab !== "practice") state.quiz = null;
     go();
   },
+  "focus-song"(el) { state.focusSong = el.dataset.id; paint(); },
+  "close-song-focus"() { state.focusSong = ""; state.tab = "notes"; go(); },
+  "play-song-focus"() {
+    const btn = document.getElementById("focusPlayBtn");
+    if (btn?.dataset.playing === "1") { engine.stop(); btn.dataset.playing = "0"; btn.textContent = "▶ Nghe bài"; return; }
+    const piece = PIECES.find((p) => p.id === state.focusSong); if (!piece) return;
+    if (btn) { btn.dataset.playing = "1"; btn.textContent = "■ Dừng"; }
+    playScore(resolve(piece.seq), { countIn: 4, bpm: state.bpm, onEnd() { engine.stop(); const b = document.getElementById("focusPlayBtn"); if (b) { b.dataset.playing = "0"; b.textContent = "▶ Nghe bài"; } } });
+  },
+  "analyze-beat"() { if (state.beat.buffer) { const r = estimateBeatAndKey(state.beat.buffer); state.beat.bpm = r.bpm; state.beat.key = ["Đô", "Đô thăng", "Rê", "Mi giáng", "Mi", "Fa", "Fa thăng", "Sol", "La giáng", "La", "Si giáng", "Si"][r.keyIdx] + " trưởng (ước lượng)"; state.beat.keyIdx = r.keyIdx; go(); } else toast("Chọn tệp âm thanh trước", "bad"); },
+  "play-beat"() { const player = document.getElementById("beatPlayer"); if (player) { if (!player.src && state.beat.audioUrl) player.src = state.beat.audioUrl; player.play().catch(() => toast("Bấm phát trên trình phát âm thanh", "bad")); } else toast("Chọn beat trước", "bad"); },
+  "recommend-beat"() {
+    if (!state.beat.buffer) { toast("Chọn tệp beat trước", "bad"); return; }
+    state.beat.semitones = recommendedSemitones();
+    const fluteName = ({ 0: "sáo Đô", 2: "sáo Rê", 7: "sáo Sol" })[state.beat.instrumentKey] || "sáo đã chọn";
+    state.beat.recommendation = `Gợi ý ban đầu: dùng ${fluteName}, chuyển ${state.beat.semitones > 0 ? "+" : ""}${state.beat.semitones} nửa cung để đưa chủ âm gần tông cơ bản của sáo. Nghe thử và kiểm tra quãng âm; nhận diện tông chỉ là ước lượng.`;
+    go();
+  },
+  "export-beat"() { exportAdjustedBeat().catch((err) => { console.error(err); toast("Xuất WAV không thành công", "bad"); }); },
   "breath-mic"() {
     if (breath.stream) { releaseMic(); stopBreathListen(); }
     else startBreathListen();
@@ -4014,7 +4397,7 @@ const actions = {
   },
   "pair-hear"() {
     const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
-    playScore(pairNotes(pair), { countIn: 4, bpm: 48 });
+    playScore(pairNotes(pair), { countIn: 4 });
   },
   "pair-mic"() {
     if (pairListen.on) stopPairListen();
@@ -4147,20 +4530,6 @@ const actions = {
     const item = q.items[q.index];
     const choice = el.dataset.choice;
     const good = choice === item.answer;
-    const blow = el.dataset.blow === "1";
-    if (state.practice === "name" && !blow) {
-      document.querySelectorAll("[data-choice]").forEach((b) => {
-        b.classList.toggle("wrong", !good && b.dataset.choice === choice);
-        b.classList.toggle("correct", good && b.dataset.choice === choice);
-      });
-      const fb = document.getElementById("feedback");
-      if (fb) {
-        fb.textContent = good ? "Đúng tên. Thổi đúng nốt này thì sang câu sau." : "Chưa phải. Thổi đúng nốt trên khuông thì sang câu sau.";
-        fb.className = "feedback " + (good ? "good" : "bad");
-      }
-      return;
-    }
-    if (state.practice === "name" && !good) return;
     q.locked = true;
     q.good = (q.good || 0) + (good ? 1 : 0);
     document.querySelectorAll("[data-choice]").forEach((b) => {
@@ -4198,7 +4567,7 @@ const actions = {
       releaseMic();
       stopQuizListen();
       const btn = document.getElementById("quizMic");
-      if (btn) { btn.textContent = "Thổi trả lời"; btn.classList.remove("primary"); }
+      if (btn) { btn.textContent = "Thổi nốt (tùy chọn)"; btn.classList.remove("primary"); }
       const fb = document.getElementById("feedback");
       if (fb && state.quiz && !state.quiz.locked) { fb.textContent = ""; fb.className = "feedback"; }
       return;
@@ -4262,11 +4631,19 @@ function onPointer(e) {
   onTap(pad.dataset.tap);
 }
 function onInput(e) {
-  if (e.target.id === "bpm") {
+  if (e.target.id === "bpm" || e.target.id === "focusBpm") {
     state.bpm = Number(e.target.value);
-    document.getElementById("bpmVal").textContent = state.bpm;
+    const mainBpm = document.getElementById("bpmVal"); if (mainBpm) mainBpm.textContent = state.bpm;
+    const focusBpm = document.getElementById("focusBpmVal"); if (focusBpm) focusBpm.textContent = state.bpm;
     save();
   }
+  if (e.target.id === "beatTranspose") state.beat.semitones = Math.max(-12, Math.min(12, Number(e.target.value) || 0));
+  if (e.target.id === "fluteKey") state.beat.instrumentKey = Number(e.target.value);
+  if (e.target.id === "beatSpeed") {
+    state.beat.speed = Number(e.target.value);
+    const out = document.getElementById("beatSpeedText"); if (out) out.textContent = `${state.beat.speed}% · ${state.beat.bpm ? Math.round(state.beat.bpm * state.beat.speed / 100) : "—"} BPM`;
+  }
+  if (e.target.id === "youtubeUrl") state.beat.url = e.target.value.trim();
   if (e.target.id === "sw-metro") { state.metro = e.target.checked; save(); }
   if (e.target.id === "sw-hint") {
     state.hint = e.target.checked;
@@ -4300,11 +4677,13 @@ function onKey(e) {
       e.preventDefault();
       onTap("dap");
     }
-    if (e.key === "ArrowUp" || e.key === "k" || e.key === "K") {
-      e.preventDefault();
-      onTap("nhac");
-    }
   }
+}
+function onChange(e) {
+  if (e.target.id === "beatFile" && e.target.files?.[0]) loadBeatFile(e.target.files[0]);
+  if (e.target.id === "youtubeUrl") { state.beat.url = e.target.value.trim(); go(); }
+  if (e.target.id === "beatTranspose") state.beat.semitones = Math.max(-12, Math.min(12, Number(e.target.value) || 0));
+  if (e.target.id === "fluteKey") state.beat.instrumentKey = Number(e.target.value);
 }
 
 function barsOk(seq) {
@@ -4402,6 +4781,7 @@ function init() {
   document.body.addEventListener("click", onClick);
   document.body.addEventListener("pointerdown", onPointer);
   document.body.addEventListener("input", onInput);
+  document.body.addEventListener("change", onChange);
   document.addEventListener("keydown", onKey);
   paint();
 }
