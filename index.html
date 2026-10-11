@@ -997,7 +997,9 @@ const saved = load();
 const state = {
   tab: "notes",
   focusSong: "",
-  beat: { fileName: "", bpm: 0, key: "", duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
+  beat: { fileName: "", bpm: 0, key: "", keyIdx: 0, duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
+  songBeat: true,
+  songTongue: true,
   practice: "name",
   level: saved.level || 1,
   extras: !!saved.extras,
@@ -1568,7 +1570,9 @@ function scoreSVG(notes, opt) {
   const gY = opt.compact ? 96 : 177;
   const yPos = (pos) => gY - (pos - 2) * step;
   const bottomLine = yPos(0);
-  const showLane = !!opt.lane;
+  const showLane = !!opt.lane || !!opt.foot || !!opt.tongue;
+  const showFoot = opt.foot === undefined ? !!opt.lane : !!opt.foot;
+  const showTongue = opt.tongue === undefined ? !!opt.lane : !!opt.tongue;
   const systems = splitSystems(laid.items, laid.totalE);
   const left = opt.clef === false ? 28 : 156;
   const lineBeats = Math.max(1, ...systems.map((s) => (s.to - s.from) / 2));
@@ -1579,7 +1583,8 @@ function scoreSVG(notes, opt) {
   }
   const eighthW = beatW / 2;
   const laneY = bottomLine + (opt.clef === false ? 28 : 58);
-  const blockH = showLane ? laneY + 108 : bottomLine + (opt.map ? Math.ceil(step * 4.3) : 32);
+  const laneExtra = showFoot && showTongue ? 108 : showFoot ? 60 : showTongue ? 92 : 0;
+  const blockH = showLane ? laneY + laneExtra : bottomLine + (opt.map ? Math.ceil(step * 4.3) : 32);
   const width = left + lineBeats * beatW + 28;
   const fullBar = laid.totalE >= 8 && laid.totalE % 8 === 0;
   const laneSize = beatW < 72 ? 12 : 13;
@@ -1681,7 +1686,7 @@ function scoreSVG(notes, opt) {
     if (showLane) {
       const plan = beatPlan(notes);
       const beat0 = sys.from / 2;
-      for (let b = 0; b < beats; b++) {
+      if (showFoot) for (let b = 0; b < beats; b++) {
         const x = left + b * beatW;
         const global = beat0 + b;
         const stepPlan = plan[global] || { motion: "dap", tongue: false };
@@ -1690,7 +1695,7 @@ function scoreSVG(notes, opt) {
         parts.push(`<rect class="bcell ${cls}" data-beat="${global}" x="${x + 3}" y="${y0 + laneY}" width="${beatW - 6}" height="32" rx="8"/>`);
         parts.push(`<text class="lane-label" x="${x + beatW / 2}" y="${y0 + laneY + 21}" text-anchor="middle" font-family="Be Vietnam Pro, Segoe UI, sans-serif" font-size="${laneSize}" font-weight="700" fill="#241c16">${label}</text>`);
       }
-      items.forEach((n) => {
+      if (showTongue) items.forEach((n) => {
         const x = left + (n.start - sys.from) * eighthW + 3;
         const w = Math.max(8, n.e * eighthW - 6);
         const luyen = n.art === "luyen";
@@ -1702,19 +1707,21 @@ function scoreSVG(notes, opt) {
           parts.push(`<text x="${x + w / 2}" y="${y0 + laneY + 56}" text-anchor="middle" font-family="Be Vietnam Pro, Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#fff">${word}</text>`);
         }
       });
-      slurGroups(laid.items).forEach((g) => {
+      if (showTongue) slurGroups(laid.items).forEach((g) => {
         const here = g.filter((n) => n.start >= sys.from && n.start < sys.to);
         if (here.length < 2) return;
         if (here.every((n) => n.e * eighthW - 6 > 42)) return;
         const last = here[here.length - 1];
         const x1 = left + (here[0].start - sys.from) * eighthW;
         const x2 = left + (last.start - sys.from + last.e) * eighthW;
-        parts.push(`<text x="${(x1 + x2) / 2}" y="${y0 + laneY + 80}" text-anchor="middle" font-family="Be Vietnam Pro, Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#14485c">Lưỡi nốt đầu, sau đó luyến</text>`);
+        parts.push(`<text x="${(x1 + x2) / 2}" y="${y0 + laneY + (showFoot ? 80 : 40)}" text-anchor="middle" font-family="Be Vietnam Pro, Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#14485c">Lưỡi nốt đầu, sau đó luyến</text>`);
       });
       const railW = Math.max(0, beats * beatW);
-      const railY = y0 + laneY + 90;
-      parts.push(`<rect class="time-rail" x="${left}" y="${railY}" width="${railW}" height="8" rx="4"/>`);
-      parts.push(`<rect class="time-fill" x="${left}" y="${railY}" width="0" height="8" rx="4"/>`);
+      const railY = y0 + laneY + (showTongue ? (showFoot ? 90 : 50) : 38);
+      if (showFoot || showTongue) {
+        parts.push(`<rect class="time-rail" x="${left}" y="${railY}" width="${railW}" height="8" rx="4"/>`);
+        parts.push(`<rect class="time-fill" x="${left}" y="${railY}" width="0" height="8" rx="4"/>`);
+      }
     }
     const headTop = y(8) - 12;
     const headBottom = showLane ? y0 + laneY + 100 : y(0) + 8;
@@ -1843,7 +1850,9 @@ function mountScore(notes, opt) {
   return `<div class="score-scroll ${opt.fullSheet ? "full-sheet" : ""} ${state.hint ? "" : "assist-off"}" id="scoreHost" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
 function previewScore(notes, pieceId, fullSheet = false) {
-  const view = scoreSVG(notes, { lane: true, time: true, clef: true });
+  const songHints = fullSheet;
+  const lane = songHints ? state.songBeat || state.songTongue : true;
+  const view = scoreSVG(notes, { lane, foot: songHints ? state.songBeat : undefined, tongue: songHints ? state.songTongue : undefined, time: true, clef: true });
   return `<div class="score-scroll preview ${fullSheet ? "full-sheet" : ""}" data-piece="${esc(pieceId || "")}" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
 function lineButtonText(btn, running) {
@@ -2150,7 +2159,7 @@ function paintRhythm() {
   const pane = state.rhythmPane === "nhip" || state.rhythmPane === "lo" ? state.rhythmPane : "bai";
   state.rhythmPane = pane;
   const paneTabs = [
-    ["bai", "Bài thổi"],
+    ["bai", "Bài tập & bài hát"],
     ["nhip", "Nhịp đập"],
     ["lo", "Sơ đồ lỗ"]
   ].map(([id, label]) => `<button type="button" class="btn ${id === pane ? "on" : ""}" data-act="rhythm-pane" data-pane="${id}">${label}</button>`).join("");
@@ -2208,6 +2217,7 @@ function paintRhythm() {
     }).join("");
     const mix = drillShelf(shelf.id) ? `<button type="button" class="btn" data-act="mix-piece">Trộn bài mới</button>` : "";
     body = `<div class="sheet-rest ${shelf.id === "songs" ? "songs-mode" : ""}">
+      <div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="shelf" data-shelf="study">Mở 15 bài tập sáo trúc</button></div>
       <div class="piece-tabs">${groupTabs}</div>
       ${shelf.note ? `<p class="foot-note">${esc(shelf.note)}</p>` : ""}
       <div class="piece-tabs nums">${pieceTabs}${mix}</div>
@@ -2223,6 +2233,7 @@ function paintRhythm() {
             <button type="button" class="btn" data-act="tap-piece" data-id="${piece.id}">Tập đập</button>
           </div>
         </div>
+        ${shelf.id === "songs" ? `<div class="row song-hint-options"><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Hiện đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Hiện đánh lưỡi/luyến</label></div>` : ""}
         ${previewScore(resolve(piece.seq), piece.id, shelf.id === "songs")}
         ${linePracticeBar(resolve(piece.seq), piece.id)}
       </div></div>
@@ -2234,7 +2245,7 @@ function paintRhythm() {
 function pieceGroups() {
   return [
     { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Mỗi sheet dài khoảng 5–7 dòng khuông; bấm Nghe để nghe cả bài hoặc Tập dòng để luyện từng dòng." },
-    { id: "study", title: "Lộ trình 15 bài", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn theo tiến trình từ hơi và lưỡi đơn đến chạy ngón, luyến, nốt chấm và tổng hợp. Các cung luyến đánh dấu nốt sau để nhắc nối hơi, không bật lưỡi." },
+    { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn, từ dễ đến khó: hơi, lưỡi, chạy ngón, nốt chấm và các đoạn luyến. Chọn tên bài bên dưới rồi bấm Nghe hoặc Tập dòng." },
     { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
     { id: "kythuat", title: "Kỹ thuật", ids: ["laybai", "vobai", "rungbai", "nhanbai"], note: "Láy, vỗ, rung, nhấn. Bấm Tập dòng rồi thổi. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong một dòng." },
@@ -3376,30 +3387,30 @@ function paintSongFocus() {
   const piece = PIECES.find((p) => p.id === state.focusSong) || SONG_LIBRARY[0];
   state.focusSong = piece.id;
   const maxW = Math.max(320, Math.min(1800, window.innerWidth - 28));
-  const score = scoreSVG(resolve(piece.seq), { lane: false, time: true, clef: true, compact: true, fullSheet: true, maxW });
+  const score = scoreSVG(resolve(piece.seq), { lane: state.songBeat || state.songTongue, foot: state.songBeat, tongue: state.songTongue, time: true, clef: true, compact: true, fullSheet: true, maxW });
   return `<section class="song-focus" aria-label="Sheet nhạc toàn màn hình">
     <header class="song-focus-head"><div><h2>${esc(piece.title)}</h2><p>${esc(piece.text)}</p></div><button type="button" class="song-focus-close" data-act="close-song-focus" aria-label="Đóng sheet, về trang chủ">×</button></header>
-    <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Nghe bài</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label></div>
+    <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Nghe bài</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Đánh lưỡi/luyến</label></div>
     <div id="scoreHost" class="score-scroll full-sheet fit-viewport song-focus-score">${score.html}</div>
   </section>`;
 }
 function paintBeatTool() {
   const b = state.beat;
   const embedId = youtubeId(b.url);
-  const analyzed = b.buffer ? `<div class="beat-result"><p><strong>${esc(b.fileName)}</strong> · dài ${Math.floor(b.duration / 60)}:${String(Math.floor(b.duration % 60)).padStart(2, "0")}</p><p>Tempo ước lượng: <strong>${b.bpm || "chưa rõ"} BPM</strong> · tông ước lượng: <strong>${esc(b.key || "chưa rõ")}</strong></p><p>${esc(b.recommendation)}</p></div><audio class="beat-player" id="beatPlayer" controls></audio>` : `<p id="beatStatus">Chọn tệp âm thanh để phân tích nhịp và tông.</p>`;
+  const analyzed = b.buffer ? `<div class="beat-result"><p><strong>${esc(b.fileName)}</strong> · dài ${Math.floor(b.duration / 60)}:${String(Math.floor(b.duration % 60)).padStart(2, "0")}</p><p>Tempo ước lượng: <strong>${b.bpm || "chưa rõ"} BPM</strong> · tông ước lượng: <strong>${esc(b.key || "chưa rõ")}</strong></p><p>${esc(b.recommendation)}</p><p class="quality-tip">Khuyến nghị giữ nguyên beat để tránh méo tiếng hoặc đổi tốc độ. Phân tích tông/tempo chỉ là ước lượng; lựa chọn cuối còn tùy quãng âm và cách lên giọng của cây sáo.</p></div><audio class="beat-player" id="beatPlayer" controls></audio>` : `<p id="beatStatus">Chọn tệp âm thanh để nhận gợi ý tông sáo và nhịp.</p>`;
   return `<section class="beat-tool">
-    <div class="card"><h2>Phân tích beat cho sáo</h2><p>Chọn beat bạn có quyền sử dụng. Trang này phân tích trực tiếp tệp âm thanh trên thiết bị, không tải tệp lên máy chủ.</p>
+    <div class="card"><h2>Phân tích và chỉnh beat theo sáo</h2><p>Chọn tệp âm thanh để nhận diện tông, nhịp; chọn cây sáo bạn đang có để tính mức chuyển beat.</p>
       <label for="beatFile">Tệp âm thanh (MP3, WAV, M4A, OGG)</label><p><input id="beatFile" type="file" accept="audio/*"></p>
-      <label for="youtubeUrl">Link YouTube để tham chiếu / nghe</label><p><input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=…" value="${esc(b.url)}"></p>
-      ${embedId ? `<iframe title="Nghe beat YouTube" width="100%" height="180" src="https://www.youtube-nocookie.com/embed/${embedId}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe><p>Trình duyệt không cho đọc trực tiếp luồng âm thanh YouTube để phân tích. Hãy chọn thêm tệp âm thanh hợp pháp của beat để đo tự động.</p>` : `<p>Link YouTube chỉ dùng để tham chiếu; trình duyệt chặn phân tích luồng âm thanh trực tiếp từ YouTube.</p>`}
-      <div class="row"><button type="button" class="btn" data-act="analyze-beat">Phân tích lại</button><button type="button" class="btn" data-act="play-beat">Nghe tệp</button></div>${analyzed}
+      <label for="youtubeUrl">Link YouTube (chỉ để mở/nghe)</label><p><input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=…" value="${esc(b.url)}"></p>
+      ${embedId ? `<p><a class="btn" href="https://www.youtube.com/watch?v=${embedId}" target="_blank" rel="noopener noreferrer">Mở beat trên YouTube</a></p><p class="quality-tip">Không thể phân tích trực tiếp chỉ từ đường link YouTube trong trang này. Nếu muốn nhận diện, hãy chọn tệp âm thanh của beat.</p>` : `<p class="quality-tip">Link YouTube không cung cấp âm thanh để phân tích trong trang này; hãy dùng tệp âm thanh nếu cần nhận diện tông.</p>`}
+      <div class="row">${b.buffer ? `<button type="button" class="btn" data-act="analyze-beat">Phân tích lại</button><button type="button" class="btn" data-act="play-beat">Nghe tệp</button>` : ""}</div>${analyzed}
     </div>
-    <div class="card"><h2>Chỉnh beat cho sáo</h2><p>Chọn quãng chuyển tông và tốc độ. Đổi tốc độ bằng cách đổi cao độ sẽ làm tempo đổi theo; đây là cách xuất đơn giản, chưa phải time-stretch giữ nguyên tông.</p>
-      <label for="fluteKey">Sáo dự định thổi</label><p><select id="fluteKey"><option value="0" ${Number(b.instrumentKey) === 0 ? "selected" : ""}>Sáo Đô (C)</option><option value="2" ${Number(b.instrumentKey) === 2 ? "selected" : ""}>Sáo Rê (D)</option><option value="7" ${Number(b.instrumentKey) === 7 ? "selected" : ""}>Sáo Sol (G)</option></select></p>
-      <label for="beatTranspose">Chuyển tông (nửa cung)</label><p><input id="beatTranspose" type="number" min="-12" max="12" step="1" value="${b.semitones}"></p>
-      <label for="beatSpeed">Tốc độ phát / BPM mới: <strong id="beatSpeedText">${b.speed}% · ${b.bpm ? Math.round(b.bpm * b.speed / 100) : "—"} BPM</strong></label><p><input id="beatSpeed" type="range" min="70" max="130" step="1" value="${b.speed}"></p>
-      <div class="row"><button type="button" class="btn primary" data-act="recommend-beat">Gợi ý tông sáo Đô</button><button type="button" class="btn" data-act="export-beat">Xuất WAV chất lượng cao</button></div>
-      <p class="quality-tip">Để giữ chất lượng: dùng nguồn lossless/WAV hoặc bản tải hợp pháp chất lượng cao; tránh chuyển MP3 qua lại nhiều lần. Xuất WAV 24-bit ở tần số mẫu gốc giúp hạn chế suy hao thêm, nhưng không thể khôi phục chi tiết đã mất trong nguồn nén.</p>
+    <div class="card"><h2>Chỉnh theo cây sáo của bạn</h2><p>Chọn loại sáo để nhận gợi ý tự động. Chuyển tông bằng đổi tốc độ phát sẽ làm beat nhanh/chậm theo; đây là bản nghe thử nhanh.</p>
+      <label for="fluteKey">Tôi có sáo</label><p><select id="fluteKey"><option value="0" ${Number(b.instrumentKey) === 0 ? "selected" : ""}>Sáo Đô (C)</option><option value="2" ${Number(b.instrumentKey) === 2 ? "selected" : ""}>Sáo Rê (D)</option><option value="7" ${Number(b.instrumentKey) === 7 ? "selected" : ""}>Sáo Sol (G)</option></select></p>
+      <label for="beatTranspose">Chuyển beat (nửa cung): <strong id="beatTransposeText">${b.semitones > 0 ? "+" : ""}${b.semitones}</strong></label><p><input id="beatTranspose" type="range" min="-6" max="6" step="1" value="${b.semitones}"></p>
+      <label for="beatSpeed">Tốc độ phát: <strong id="beatSpeedText">${b.speed}% · ${b.bpm ? Math.round(b.bpm * b.speed / 100) : "—"} BPM</strong></label><p><input id="beatSpeed" type="range" min="70" max="130" step="1" value="${b.speed}"></p>
+      <div class="row"><button type="button" class="btn primary" data-act="recommend-beat">Gợi ý cho sáo của tôi</button><button type="button" class="btn" data-act="export-beat">Tải bản đã chỉnh</button></div>
+      <p class="quality-tip">Đổi tông và tốc độ ở đây dùng cách phát lại đơn giản nên có thể làm thay đổi nhịp/âm sắc; WAV chỉ giữ định dạng xuất, không khôi phục chất lượng nguồn. Để tiếng tự nhiên nhất, dùng beat gốc và chọn sáo hợp tông; chỉ tải bản chỉnh khi đã nghe thử và thấy ổn.</p>
     </div>
   </section>`;
 }
@@ -3454,7 +3465,9 @@ async function loadBeatFile(file) {
     state.beat.key = result.key + " trưởng (ước lượng)";
     state.beat.keyIdx = result.keyIdx;
     state.beat.audioUrl = URL.createObjectURL(file);
-    state.beat.recommendation = `Phân tích gần đúng: ${state.beat.key}. Có thể thử chuyển tông ${result.keyIdx ? "về Đô trưởng" : "giữ nguyên Đô trưởng"}; nghe thử để kiểm tra vì beat có thể ở giọng thứ hoặc hòa âm phức tạp.`;
+    state.beat.semitones = recommendedSemitones();
+    const fluteName = ({ 0: "sáo Đô", 2: "sáo Rê", 7: "sáo Sol" })[state.beat.instrumentKey] || "sáo Đô";
+    state.beat.recommendation = `Gợi ý ban đầu: dùng ${fluteName}; chuyển beat ${state.beat.semitones > 0 ? "+" : ""}${state.beat.semitones} nửa cung để gần tông sáo. Tông chỉ là ước lượng; hãy nghe thử và kiểm tra quãng cao/thấp trước khi tập.`;
     go();
     const player = document.getElementById("beatPlayer"); if (player) player.src = state.beat.audioUrl;
   } catch (err) {
@@ -4249,13 +4262,13 @@ const actions = {
     if (btn) { btn.dataset.playing = "1"; btn.textContent = "■ Dừng"; }
     playScore(resolve(piece.seq), { countIn: 4, bpm: state.bpm, onEnd() { engine.stop(); const b = document.getElementById("focusPlayBtn"); if (b) { b.dataset.playing = "0"; b.textContent = "▶ Nghe bài"; } } });
   },
-  "analyze-beat"() { if (state.beat.buffer) { const r = estimateBeatAndKey(state.beat.buffer); state.beat.bpm = r.bpm; state.beat.key = ["Đô", "Đô thăng", "Rê", "Mi giáng", "Mi", "Fa", "Fa thăng", "Sol", "La giáng", "La", "Si giáng", "Si"][r.keyIdx] + " trưởng (ước lượng)"; state.beat.keyIdx = r.keyIdx; go(); } else toast("Chọn tệp âm thanh trước", "bad"); },
+  "analyze-beat"() { if (state.beat.buffer) { const r = estimateBeatAndKey(state.beat.buffer); state.beat.bpm = r.bpm; state.beat.key = ["Đô", "Đô thăng", "Rê", "Mi giáng", "Mi", "Fa", "Fa thăng", "Sol", "La giáng", "La", "Si giáng", "Si"][r.keyIdx] + " trưởng (ước lượng)"; state.beat.keyIdx = r.keyIdx; actions["recommend-beat"](); } else toast("Chọn tệp âm thanh trước", "bad"); },
   "play-beat"() { const player = document.getElementById("beatPlayer"); if (player) { if (!player.src && state.beat.audioUrl) player.src = state.beat.audioUrl; player.play().catch(() => toast("Bấm phát trên trình phát âm thanh", "bad")); } else toast("Chọn beat trước", "bad"); },
   "recommend-beat"() {
     if (!state.beat.buffer) { toast("Chọn tệp beat trước", "bad"); return; }
     state.beat.semitones = recommendedSemitones();
     const fluteName = ({ 0: "sáo Đô", 2: "sáo Rê", 7: "sáo Sol" })[state.beat.instrumentKey] || "sáo đã chọn";
-    state.beat.recommendation = `Gợi ý ban đầu: dùng ${fluteName}, chuyển ${state.beat.semitones > 0 ? "+" : ""}${state.beat.semitones} nửa cung để đưa chủ âm gần tông cơ bản của sáo. Nghe thử và kiểm tra quãng âm; nhận diện tông chỉ là ước lượng.`;
+    state.beat.recommendation = `Gợi ý ban đầu: dùng ${fluteName}; chuyển beat ${state.beat.semitones > 0 ? "+" : ""}${state.beat.semitones} nửa cung để gần tông sáo. Tông chỉ là ước lượng; nghe thử và kiểm tra quãng cao/thấp trước khi tập.`;
     go();
   },
   "export-beat"() { exportAdjustedBeat().catch((err) => { console.error(err); toast("Xuất WAV không thành công", "bad"); }); },
@@ -4637,7 +4650,7 @@ function onInput(e) {
     const focusBpm = document.getElementById("focusBpmVal"); if (focusBpm) focusBpm.textContent = state.bpm;
     save();
   }
-  if (e.target.id === "beatTranspose") state.beat.semitones = Math.max(-12, Math.min(12, Number(e.target.value) || 0));
+  if (e.target.id === "beatTranspose") { state.beat.semitones = Number(e.target.value) || 0; const out = document.getElementById("beatTransposeText"); if (out) out.textContent = `${state.beat.semitones > 0 ? "+" : ""}${state.beat.semitones}`; }
   if (e.target.id === "fluteKey") state.beat.instrumentKey = Number(e.target.value);
   if (e.target.id === "beatSpeed") {
     state.beat.speed = Number(e.target.value);
@@ -4682,8 +4695,10 @@ function onKey(e) {
 function onChange(e) {
   if (e.target.id === "beatFile" && e.target.files?.[0]) loadBeatFile(e.target.files[0]);
   if (e.target.id === "youtubeUrl") { state.beat.url = e.target.value.trim(); go(); }
-  if (e.target.id === "beatTranspose") state.beat.semitones = Math.max(-12, Math.min(12, Number(e.target.value) || 0));
+  if (e.target.id === "beatTranspose") state.beat.semitones = Number(e.target.value) || 0;
   if (e.target.id === "fluteKey") state.beat.instrumentKey = Number(e.target.value);
+  if (e.target.id === "songShowFoot") { state.songBeat = e.target.checked; go(); }
+  if (e.target.id === "songShowTongue") { state.songTongue = e.target.checked; go(); }
 }
 
 function barsOk(seq) {
