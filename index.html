@@ -435,6 +435,22 @@
     .topbar { flex-wrap: wrap; }
     .switches { flex-wrap: wrap; }
   }
+  @media (max-width: 1600px) and (min-width: 821px) {
+    .topbar {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "brand tabs visits" "tempo switches switches";
+      gap: 8px 14px;
+      justify-content: initial;
+    }
+    .topbar h1 { grid-area: brand; }
+    .topbar .tabs { grid-area: tabs; width: 100%; }
+    .tabs button { flex: 1 1 0; white-space: nowrap; padding-inline: 6px; }
+    .tempo { grid-area: tempo; width: 220px; }
+    .switches { grid-area: switches; flex-wrap: wrap; justify-content: flex-end; }
+    .switches label { white-space: nowrap; }
+    .visit-stat { grid-area: visits; justify-self: end; }
+  }
   @media (max-width: 860px) {
     .note-main { display: flex; flex-direction: column; }
     .note-staff, .detail, .note-layout > .ladder { grid-column: auto; grid-row: auto; max-height: none; }
@@ -2389,7 +2405,7 @@ function paintPractice() {
   }
   const levelRow = state.practice === "tap" || state.practice === "doi" ? "" : `<div class="seg">${levels}</div>`;
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
-  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${levelRow}${body}</div>`;
+  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="open-study">Mở 15 bài tập sáo trúc</button></div><div class="seg">${modes}</div>${levelRow}${body}</div>`;
 }
 function paintPairs() {
   const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
@@ -4279,6 +4295,13 @@ async function startPairListen() {
 }
 
 const actions = {
+  "open-study"() {
+    state.tab = "notes";
+    state.shelf = "study";
+    state.shelfPiece = STUDY_LIBRARY[0].id;
+    state.focusSong = "";
+    go();
+  },
   tab(el) {
     if (state.focusSong) return;
     state.tab = el.dataset.tab;
