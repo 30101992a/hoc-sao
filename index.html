@@ -452,6 +452,15 @@
     .switches label { white-space: nowrap; }
     .visit-stat { grid-area: visits; justify-self: end; }
   }
+  @media (max-width: 1100px) and (min-width: 821px) {
+    .topbar {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "brand visits" "tabs tabs" "tempo switches";
+    }
+    .topbar .tabs { flex-wrap: wrap; }
+    .tabs button { flex: 1 1 110px; }
+    .switches { justify-content: flex-start; }
+  }
   @media (max-width: 860px) {
     .note-main { display: flex; flex-direction: column; }
     .note-staff, .detail, .note-layout > .ladder { grid-column: auto; grid-row: auto; max-height: none; }
@@ -499,7 +508,7 @@
     .switches label { font-size: 13px; }
     .dock {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       position: fixed;
       left: 0; right: 0; bottom: 0;
       z-index: 20;
@@ -513,7 +522,7 @@
       border: none;
       color: var(--soft);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 12px;
       min-height: 48px;
       border-radius: 8px;
     }
@@ -711,6 +720,7 @@
     <nav class="tabs" aria-label="Phần học">
       <button type="button" data-act="tab" data-tab="notes" class="on">Nốt trên khuông</button>
       <button type="button" data-act="tab" data-tab="rhythm">Đập và nhấc</button>
+      <button type="button" data-act="tab" data-tab="sheet">Tập thổi sheet</button>
       <button type="button" data-act="tab" data-tab="practice">Luyện tập</button>
       <button type="button" data-act="tab" data-tab="breath">Xông hơi</button>
       <button type="button" data-act="tab" data-tab="beat">Beat → sáo</button>
@@ -733,6 +743,7 @@
 <nav class="dock" aria-label="Phần học">
   <button type="button" data-act="tab" data-tab="notes" class="on">Nốt</button>
   <button type="button" data-act="tab" data-tab="rhythm">Đập</button>
+  <button type="button" data-act="tab" data-tab="sheet">Sheet</button>
   <button type="button" data-act="tab" data-tab="practice">Luyện</button>
   <button type="button" data-act="tab" data-tab="breath">Hơi</button>
   <button type="button" data-act="tab" data-tab="beat">Beat</button>
@@ -2234,7 +2245,7 @@ function paintRhythm() {
       </div>
     </div>`;
   } else {
-    const groups = pieceGroups();
+    const groups = pieceGroups().filter((group) => group.id !== "songs");
     const shelf = groups.find((g) => g.id === state.shelf) || groups[0];
     state.shelf = shelf.id;
     const piece = PIECES.find((p) => p.id === state.shelfPiece && shelf.ids.includes(p.id)) || PIECES.find((p) => p.id === shelf.ids[0]);
@@ -2273,9 +2284,37 @@ function paintRhythm() {
   return `<div class="sheet ${pane === "bai" && state.shelf === "songs" ? "songs-mode" : ""}"><div class="piece-tabs pane-tabs">${paneTabs}</div>${body}</div>`;
 }
 
+function paintSongSheets() {
+  const piece = SONG_LIBRARY.find((song) => song.id === state.shelfPiece) || SONG_LIBRARY[0];
+  state.shelf = "songs";
+  state.shelfPiece = piece.id;
+  statePlan = beatPlan(resolve(piece.seq));
+  lampBar = 0;
+  const songTabs = SONG_LIBRARY.map((song) => `<button type="button" class="btn ${song.id === piece.id ? "on" : ""}" data-act="shelf-piece" data-id="${song.id}" title="${esc(song.title)}">${esc(song.title)}</button>`).join("");
+  return `<div class="sheet song-library">
+    <div class="piece-tabs pane-tabs"><strong>Tập thổi sheet</strong><span>Chọn bài, chỉnh nhịp, rồi chạy hoặc tập thổi theo dòng.</span></div>
+    <div class="sheet-rest songs-mode">
+      <div class="piece-tabs nums song-picker" aria-label="Chọn bài hát">${songTabs}</div>
+      <div class="pieces"><div class="piece">
+        <div class="piece-head">
+          <div><strong>${esc(piece.title)}</strong><span class="badge">Bản tập sáo Đô</span><p class="piece-blurb">${esc(piece.text)}</p></div>
+          <div class="row" style="margin:0">
+            <button type="button" class="btn" data-act="focus-song" data-id="${piece.id}">Sheet toàn màn hình</button>
+            <button type="button" class="btn" data-act="hear-piece" data-id="${piece.id}">${state.voice ? "Nghe mẫu + chạy thời gian" : "Chạy theo tiếng phách"}</button>
+            <button type="button" class="btn" data-act="tap-piece" data-id="${piece.id}">Tập đập</button>
+          </div>
+        </div>
+        <div class="row song-hint-options"><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Hiện đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Hiện đánh lưỡi/luyến</label></div>
+        ${previewScore(resolve(piece.seq), piece.id, true)}
+        ${linePracticeBar(resolve(piece.seq), piece.id)}
+      </div></div>
+    </div>
+  </div>`;
+}
+
 function pieceGroups() {
   return [
-    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Mỗi sheet dài khoảng 5–7 dòng khuông; bấm Chạy theo tiếng phách để xem thời gian chạy, hoặc Tập dòng để luyện từng dòng." },
+    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Bấm Chạy theo tiếng phách để xem thời gian chạy, hoặc Tập dòng để luyện từng dòng." },
     { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn, từ dễ đến khó: hơi, lưỡi, chạy ngón, nốt chấm và các đoạn luyến. Chọn tên bài bên dưới rồi bấm Chạy theo tiếng phách hoặc Tập dòng." },
     { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
@@ -3390,6 +3429,7 @@ function paint() {
   if (state.focusSong) app.innerHTML = paintSongFocus();
   else if (state.tab === "notes") app.innerHTML = paintNotes();
   else if (state.tab === "rhythm") app.innerHTML = paintRhythm();
+  else if (state.tab === "sheet") app.innerHTML = paintSongSheets();
   else if (state.tab === "beat") app.innerHTML = paintBeatTool();
   else if (state.tab === "breath") {
     breath.hist = [];
@@ -4311,8 +4351,8 @@ const actions = {
     if (state.tab !== "practice") state.quiz = null;
     go();
   },
-  "focus-song"(el) { state.focusSong = el.dataset.id; paint(); },
-  "close-song-focus"() { state.focusSong = ""; state.tab = "notes"; go(); },
+  "focus-song"(el) { state.focusReturnTab = state.tab; state.focusSong = el.dataset.id; paint(); },
+  "close-song-focus"() { state.focusSong = ""; state.tab = state.focusReturnTab || "sheet"; go(); },
   "play-song-focus"() {
     const btn = document.getElementById("focusPlayBtn");
     if (btn?.dataset.playing === "1") { engine.stop(); btn.dataset.playing = "0"; btn.textContent = "▶ Chạy sheet"; return; }
