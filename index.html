@@ -703,6 +703,7 @@
     </label>
     <div class="switches">
       <label><input type="checkbox" id="sw-metro" checked> Tiếng phách</label>
+      <label><input type="checkbox" id="sw-voice"> Nghe tiếng nốt</label>
       <label><input type="checkbox" id="sw-hint" checked> Gợi ý chân</label>
       <label><input type="checkbox" id="sw-extra"> Hiện cao độ 2 và 3</label>
     </div>
@@ -1011,7 +1012,7 @@ const state = {
   level: saved.level || 1,
   extras: !!saved.extras,
   bpm: saved.bpm || 72,
-  voice: saved.voice !== false,
+  voice: saved.scoreNotes === true,
   metro: saved.metro !== false,
   hint: saved.hint !== false,
   selected: saved.selected || "G4",
@@ -1070,7 +1071,7 @@ function load() {
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      bpm: state.bpm, voice: state.voice, metro: state.metro, hint: state.hint,
+      bpm: state.bpm, scoreNotes: state.voice, metro: state.metro, hint: state.hint,
       extras: state.extras, level: state.level, selected: state.selected, stats: state.stats
     }));
   } catch (err) { /* private mode */ }
@@ -1315,7 +1316,7 @@ function tick(ctx, time, strong) {
 
 async function playPitch(midi, dur) {
   const ctx = await engine.ac();
-  if (!ctx) return;
+  if (!ctx || !state.voice) return;
   tone(ctx, ctx.currentTime + 0.02, midi, dur || 0.7);
 }
 
@@ -1338,7 +1339,7 @@ async function playScore(notes, opts) {
   if (ctx) {
     const countAt = clock + 0.06 + readyBeats * beatDur;
     for (let i = 0; i < countIn; i++) tick(ctx, countAt + i * beatDur, i % 2 === 0);
-    laid.items.forEach((n, i) => {
+    if (opts.noteSound === true || (opts.noteSound !== false && state.voice)) laid.items.forEach((n, i) => {
       if (!n.midi) return;
       const next = laid.items[i + 1];
       const legatoIn = n.art === "luyen";
@@ -1355,6 +1356,8 @@ async function playScore(notes, opts) {
     }
   }
   const host = document.getElementById("scoreHost");
+  const beatOffset = Math.max(0, Number(opts.offsetBeats) || 0);
+  const displayTotalBeats = beatOffset + laid.totalBeats;
   const endAt = origin + laid.totalBeats * beatDur;
   const targets = [];
   for (let b = 0; b < laid.totalBeats; b++) {
@@ -1378,11 +1381,11 @@ async function playScore(notes, opts) {
   function frame() {
     if (token !== engine.token) return;
     const now = ctx ? ctx.currentTime : performance.now() / 1000;
-    const beatPos = (now - origin) / beatDur;
+    const beatPos = (now - origin) / beatDur + beatOffset;
     const ready = now < origin - countIn * beatDur;
     const counting = !ready && now < origin;
     const countBeat = (now - (origin - countIn * beatDur)) / beatDur;
-    if (opts.head !== false) paintFrame({ beatPos, counting, countBeat, ready, totalBeats: laid.totalBeats, host });
+    if (opts.head !== false) paintFrame({ beatPos, counting, countBeat, ready, totalBeats: displayTotalBeats, host });
     if (opts.tap && tapSession && tapSession.token === token) catchMisses(now);
     if (now < endAt + 0.08) requestAnimationFrame(frame);
     else if (opts.onEnd) opts.onEnd();
@@ -1397,7 +1400,10 @@ function paintFrame(f) {
   const word = document.getElementById("nowWord");
   const beatEl = document.getElementById("nowBeat");
   const foot = document.getElementById("foot");
-  if (!stage || !word) return;
+  if (!stage || !word) {
+    if (!f.counting && !f.ready && f.beatPos >= 0 && !lineListen.on) movePlayheads(f, Math.floor(f.beatPos));
+    return;
+  }
   stage.classList.toggle("assist-off", !state.hint);
   let idx = -1;
   if (f.counting) idx = Math.floor(f.countBeat);
@@ -2236,7 +2242,7 @@ function paintRhythm() {
           </div>
           <div class="row" style="margin:0">
             ${shelf.id === "songs" ? `<button type="button" class="btn" data-act="focus-song" data-id="${piece.id}">Sheet toàn màn hình</button>` : ""}
-            <button type="button" class="btn" data-act="hear-piece" data-id="${piece.id}">Nghe</button>
+            <button type="button" class="btn" data-act="hear-piece" data-id="${piece.id}">${state.voice ? "Nghe mẫu + chạy thời gian" : "Chạy theo tiếng phách"}</button>
             <button type="button" class="btn" data-act="tap-piece" data-id="${piece.id}">Tập đập</button>
           </div>
         </div>
@@ -2251,8 +2257,8 @@ function paintRhythm() {
 
 function pieceGroups() {
   return [
-    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Mỗi sheet dài khoảng 5–7 dòng khuông; bấm Nghe để nghe cả bài hoặc Tập dòng để luyện từng dòng." },
-    { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn, từ dễ đến khó: hơi, lưỡi, chạy ngón, nốt chấm và các đoạn luyến. Chọn tên bài bên dưới rồi bấm Nghe hoặc Tập dòng." },
+    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Mỗi sheet dài khoảng 5–7 dòng khuông; bấm Chạy theo tiếng phách để xem thời gian chạy, hoặc Tập dòng để luyện từng dòng." },
+    { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "15 bài tập tự biên soạn, từ dễ đến khó: hơi, lưỡi, chạy ngón, nốt chấm và các đoạn luyến. Chọn tên bài bên dưới rồi bấm Chạy theo tiếng phách hoặc Tập dòng." },
     { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
     { id: "kythuat", title: "Kỹ thuật", ids: ["laybai", "vobai", "rungbai", "nhanbai"], note: "Láy, vỗ, rung, nhấn. Bấm Tập dòng rồi thổi. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong một dòng." },
@@ -3398,7 +3404,7 @@ function paintSongFocus() {
   const score = scoreSVG(resolve(piece.seq), { lane: state.songBeat || state.songTongue, foot: state.songBeat, tongue: state.songTongue, time: true, clef: true, compact: true, fullSheet: true, maxW });
   return `<section class="song-focus" aria-label="Sheet nhạc toàn màn hình">
     <header class="song-focus-head"><div><h2>${esc(piece.title)}</h2><p>${esc(piece.text)}</p></div><button type="button" class="song-focus-close" data-act="close-song-focus" aria-label="Đóng sheet, về trang chủ">×</button></header>
-    <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Nghe bài</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Đánh lưỡi/luyến</label></div>
+    <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Chạy sheet</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label><label><input type="checkbox" id="focusVoice" ${state.voice ? "checked" : ""}> Nghe tiếng nốt</label><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Đánh lưỡi/luyến</label></div>
     <div id="scoreHost" class="score-scroll full-sheet fit-viewport song-grid song-focus-score">${score.html}</div>
   </section>`;
 }
@@ -3874,7 +3880,7 @@ function gradeLine(notes, fromE, toE, samples, beatDur) {
 }
 function replayButtons(pieceId, from, to, url) {
   const take = url ? `<button type="button" class="btn" data-act="hear-take" data-key="${esc(pieceId + ":" + from)}">Nghe lại bạn</button>` : "";
-  return `<div class="row"><button type="button" class="btn" data-act="hear-line" data-id="${esc(pieceId)}" data-from="${from}" data-to="${to}">Nghe mẫu</button>${take}</div>`;
+  return `<div class="row"><button type="button" class="btn" data-act="hear-line" data-id="${esc(pieceId)}" data-from="${from}" data-to="${to}">Nghe phách mẫu</button>${take}</div>`;
 }
 function showLineGrade(pieceId, lineNo, preview, from, to, grade, url) {
   const clearNote = (el) => {
@@ -4279,10 +4285,10 @@ const actions = {
   "close-song-focus"() { state.focusSong = ""; state.tab = "notes"; go(); },
   "play-song-focus"() {
     const btn = document.getElementById("focusPlayBtn");
-    if (btn?.dataset.playing === "1") { engine.stop(); btn.dataset.playing = "0"; btn.textContent = "▶ Nghe bài"; return; }
+    if (btn?.dataset.playing === "1") { engine.stop(); btn.dataset.playing = "0"; btn.textContent = "▶ Chạy sheet"; return; }
     const piece = PIECES.find((p) => p.id === state.focusSong); if (!piece) return;
     if (btn) { btn.dataset.playing = "1"; btn.textContent = "■ Dừng"; }
-    playScore(resolve(piece.seq), { countIn: 4, bpm: state.bpm, onEnd() { engine.stop(); const b = document.getElementById("focusPlayBtn"); if (b) { b.dataset.playing = "0"; b.textContent = "▶ Nghe bài"; } } });
+    playScore(resolve(piece.seq), { countIn: 4, bpm: state.bpm, onEnd() { engine.stop(); const b = document.getElementById("focusPlayBtn"); if (b) { b.dataset.playing = "0"; b.textContent = "▶ Chạy sheet"; } } });
   },
   "analyze-beat"() { if (state.beat.buffer) { const r = estimateBeatAndKey(state.beat.buffer); state.beat.bpm = r.bpm; state.beat.key = ["Đô", "Đô thăng", "Rê", "Mi giáng", "Mi", "Fa", "Fa thăng", "Sol", "La giáng", "La", "Si giáng", "Si"][r.keyIdx] + " trưởng (ước lượng)"; state.beat.keyIdx = r.keyIdx; actions["recommend-beat"](); } else toast("Chọn tệp âm thanh trước", "bad"); },
   "play-beat"() { const player = document.getElementById("beatPlayer"); if (player) { if (!player.src && state.beat.audioUrl) player.src = state.beat.audioUrl; player.play().catch(() => toast("Bấm phát trên trình phát âm thanh", "bad")); } else toast("Chọn beat trước", "bad"); },
@@ -4361,7 +4367,8 @@ const actions = {
     const to = Number(el.dataset.to);
     const laid = layout(resolve(piece.seq));
     const slice = laid.items.filter((n) => n.start >= from && n.start < to);
-    playScore(slice, { countIn: 0, ready: false, metro: false, head: false });
+    state.demo = { kind: "piece", id: piece.id };
+    playScore(slice, { countIn: 4, ready: false, offsetBeats: from / 2 });
   },
   "hear-take"(el) {
     const url = lineListen.takes && lineListen.takes[el.dataset.key];
@@ -4680,6 +4687,7 @@ function onInput(e) {
   }
   if (e.target.id === "youtubeUrl") state.beat.url = e.target.value.trim();
   if (e.target.id === "sw-metro") { state.metro = e.target.checked; save(); }
+  if (e.target.id === "sw-voice" || e.target.id === "focusVoice") { state.voice = e.target.checked; save(); }
   if (e.target.id === "sw-hint") {
     state.hint = e.target.checked;
     save();
@@ -4719,6 +4727,7 @@ function onChange(e) {
   if (e.target.id === "youtubeUrl") { state.beat.url = e.target.value.trim(); go(); }
   if (e.target.id === "beatTranspose") state.beat.semitones = Number(e.target.value) || 0;
   if (e.target.id === "fluteKey") state.beat.instrumentKey = Number(e.target.value);
+  if (e.target.id === "sw-voice" || e.target.id === "focusVoice") { state.voice = e.target.checked; save(); }
   if (e.target.id === "songShowFoot") { state.songBeat = e.target.checked; go(); }
   if (e.target.id === "songShowTongue") { state.songTongue = e.target.checked; go(); }
 }
@@ -4813,6 +4822,7 @@ function init() {
   document.getElementById("bpm").value = String(state.bpm);
   document.getElementById("bpmVal").textContent = state.bpm;
   document.getElementById("sw-metro").checked = state.metro;
+  document.getElementById("sw-voice").checked = state.voice;
   document.getElementById("sw-hint").checked = state.hint;
   document.getElementById("sw-extra").checked = state.extras;
   document.body.addEventListener("click", onClick);
