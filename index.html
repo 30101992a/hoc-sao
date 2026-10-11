@@ -4052,6 +4052,10 @@ async function practiceLine(el) {
   const lineStartPerf = perfNow + (origin - audioNow) * 1000;
   const countAt = audioNow + 0.08 + readyBeats * beatDur;
   for (let i = 0; i < countIn; i++) tick(playCtx, countAt + i * beatDur, i % 2 === 0);
+  if (state.metro) {
+    const exerciseBeats = Math.ceil((to - from) / 2);
+    for (let b = 0; b < exerciseBeats; b++) tick(playCtx, origin + b * beatDur, b % 2 === 0);
+  }
   lineListen.on = true;
   lineListen.token = token;
   lineListen.pieceId = pieceId;
