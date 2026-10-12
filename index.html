@@ -955,62 +955,108 @@ const PIECES = [
     seq: [["C4", 2], ["E4", 2], ["D4", 2], ["F4", 2], ["G4", 4], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 4], ["C4", 4]] }
 ];
 
-// Giai điệu dân ca/truyền thống và bài tập thiếu nhi quen thuộc, giản lược về Đô trưởng
-// cho sáo Đô. Mỗi chuỗi gồm 10 ô nhịp 4/4, 8 nốt đen/ô; sheet được chia thành 5 dòng.
+// Trường độ tính bằng số móc đơn: 1 nốt móc, 2 nốt đen, 3 đen chấm, 4 trắng, 6 trắng chấm, 8 tròn.
+function rhythmLine(pitches) {
+  const durs = [1, 1, 2, 2, 2, 2, 2, 4];
+  return pitches.trim().split(/\s+/).map((id, i) => [id, durs[i], i === 1 ? "luyen" : ""]);
+}
+function sheetSong(id, title, text, lines) {
+  return { id, title, level: 1, text, seq: lines.flat() };
+}
+const SONG_TEXT = "Có nốt móc (đuôi cong), nốt đen (đầu đặc) và nốt trắng (đầu rỗng). Nốt càng dài càng phải giữ hơi.";
 const SONG_LIBRARY = [
-  ["bac-kim-thang", "Bắc kim thang", [
-    "A4 G4 F4 C4 F4 G4 E4 E4", "E4 G4 C4 C4 C4 G4 E4 A4", "A4 C4 E4 D4 E4 A4 A4 A4",
-    "E4 E4 G4 A4 A4 A4 G4 E4", "F4 C4 E4 G4 E4 A4 G4 C4"]],
-  ["ly-cay-bong", "Lý cây bông", [
-    "D4 C4 D4 D4 C4 D4 F4 A4", "A4 C4 A4 C4 D4 C4 A4 C4", "D4 D4 C4 F4 C4 A4 C4 D4",
-    "C4 A4 C4 D4 G4 A4 C4 A4", "G4 F4 D4 F4 C4 D4 F4 C4"]],
-  ["trong-com", "Trống cơm", [
-    "G4 G4 C4 C4 D4 C4 G4 G4", "F4 G4 C4 G4 C4 C4 G4 F4", "G4 C4 C4 G4 F4 G4 C4 C4",
-    "D4 C4 D4 E4 E4 E4 G4 A4", "G4 A4 G4 A4 C4 C4 A4 G4"]],
-  ["beo-dat-may-troi", "Bèo dạt mây trôi", [
-    "C4 C4 G4 E4 F4 G4 A4 G4", "G4 E4 E4 E4 D4 E4 G4 C4", "C4 E4 D4 C4 A4 G4 G4 C4",
-    "E4 F4 G4 E4 E4 D4 E4 G4", "C4 E4 D4 C4 A4 G4 C4 C4"]],
-  ["inh-la-oi", "Inh lả ơi", [
-    "D4 A4 C4 D4 C4 A4 G4 G4", "D4 A4 G4 A4 D4 D4 C4 A4", "C4 A4 C4 G4 D4 D4 A4 G4",
-    "D4 A4 C4 D4 C4 A4 C4 C4", "D4 A4 C4 D4 C4 A4 G4 D4"]],
-  ["co-la", "Cò lả", [
-    "C4 G4 G4 C4 G4 C4 D4 C4", "G4 C4 C4 A4 G4 A4 G4 F4", "F4 C4 C4 G4 A4 G4 F4 C4",
-    "G4 G4 C4 D4 E4 D4 C4 G4", "A4 G4 F4 E4 D4 C4 C4 C4"]],
-  ["ly-cay-da", "Lý cây đa", [
-    "C4 D4 E4 G4 A4 G4 E4 D4", "C4 D4 E4 G4 E4 D4 C4 C4", "G4 A4 G4 E4 D4 E4 G4 A4",
-    "G4 E4 D4 C4 D4 E4 G4 E4", "D4 C4 D4 E4 D4 C4 C4 C4"]],
-  ["ode-to-joy", "Khải hoàn ca (Ode to Joy)", [
-    "E4 E4 F4 G4 G4 F4 E4 D4", "C4 C4 D4 E4 E4 D4 D4 D4", "E4 E4 F4 G4 G4 F4 E4 D4",
-    "C4 C4 D4 E4 D4 C4 C4 C4", "D4 D4 E4 C4 D4 E4 F4 E4"]],
-  ["frere-jacques", "Kìa con bướm vàng", [
-    "C4 D4 E4 C4 C4 D4 E4 C4", "E4 F4 G4 E4 F4 G4 G4 A4", "G4 F4 E4 C4 G4 F4 E4 C4",
-    "C4 G4 C4 C4 C4 G4 C4 C4", "E4 F4 G4 E4 C4 D4 E4 C4"]],
-  ["twinkle", "Twinkle Twinkle Little Star", [
-    "C4 C4 G4 G4 A4 A4 G4 G4", "F4 F4 E4 E4 D4 D4 C4 C4", "G4 G4 F4 F4 E4 E4 D4 D4",
-    "G4 G4 F4 F4 E4 E4 D4 D4", "C4 C4 G4 G4 A4 A4 G4 G4"]],
-  ["mary-lamb", "Mary Had a Little Lamb", [
-    "E4 D4 C4 D4 E4 E4 E4 E4", "D4 D4 D4 D4 E4 G4 G4 G4", "E4 D4 C4 D4 E4 E4 E4 E4",
-    "D4 D4 E4 D4 C4 C4 C4 C4", "E4 D4 C4 D4 E4 G4 E4 C4"]],
-  ["london-bridge", "London Bridge", [
-    "G4 A4 G4 F4 E4 F4 G4 G4", "A4 A4 A4 G4 A4 B4 C4 C4", "G4 A4 G4 F4 E4 F4 G4 G4",
-    "D4 E4 F4 E4 F4 G4 G4 G4", "G4 A4 G4 F4 E4 F4 G4 C4"]],
-  ["row-row", "Row Row Row Your Boat", [
-    "C4 C4 C4 D4 E4 E4 D4 E4", "F4 G4 C4 C4 C4 G4 G4 G4", "E4 E4 E4 C4 C4 C4 G4 G4",
-    "F4 E4 D4 C4 G4 F4 E4 D4", "C4 C4 C4 D4 E4 E4 D4 C4"]],
-  ["jingle-bells", "Jingle Bells", [
-    "E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4",
-    "F4 F4 F4 F4 F4 E4 E4 E4 E4 D4 D4 E4 D4 G4 E4 E4 E4 E4 E4 E4 E4 G4 C4 D4 E4"]],
-  ["amazing-grace", "Amazing Grace", [
-    "G4 C4 E4 C4 E4 D4 C4 A4", "G4 C4 E4 C4 E4 D4 C4 G4", "E4 G4 E4 C4 A4 G4 E4 C4",
-    "G4 C4 E4 C4 E4 D4 C4 A4", "G4 C4 E4 C4 G4 E4 D4 C4"]],
-  ["when-saints", "When the Saints Go Marching In", [
-    "C4 E4 F4 G4 C4 E4 F4 G4", "C4 E4 F4 G4 E4 C4 E4 D4", "C4 C4 D4 E4 E4 D4 C4 D4",
-    "E4 E4 E4 C4 D4 E4 F4 G4", "C4 E4 F4 G4 E4 C4 D4 C4"]]
-].map(([id, title, bars]) => ({
-  id, title, level: 1,
-  text: "Bản tập giản lược cho sáo Đô, viết ở Đô trưởng. Một số cặp có cung luyến: nối hơi sang nốt sau, không bật lưỡi; các nốt ngoài cung đánh lưỡi ở đầu nốt. Chân vẫn đập đều theo phách.",
-  seq: bars.join(" ").trim().split(/\s+/).map((note, i) => [note, 2, i % 4 === 3 ? "luyen" : ""])
-}));
+  sheetSong("bac-kim-thang", "Bắc kim thang", SONG_TEXT, [
+    rhythmLine("A4 G4 F4 C4 F4 G4 E4 E4"), rhythmLine("E4 G4 C4 C4 C4 G4 E4 A4"), rhythmLine("A4 C4 E4 D4 E4 A4 A4 A4"),
+    rhythmLine("E4 E4 G4 A4 A4 A4 G4 E4"), rhythmLine("F4 C4 E4 G4 E4 A4 G4 C4")
+  ]),
+  sheetSong("ly-cay-bong", "Lý cây bông", SONG_TEXT, [
+    rhythmLine("D4 C4 D4 D4 C4 D4 F4 A4"), rhythmLine("A4 C4 A4 C4 D4 C4 A4 C4"), rhythmLine("D4 D4 C4 F4 C4 A4 C4 D4"),
+    rhythmLine("C4 A4 C4 D4 G4 A4 C4 A4"), rhythmLine("G4 F4 D4 F4 C4 D4 F4 C4")
+  ]),
+  sheetSong("trong-com", "Trống cơm", SONG_TEXT, [
+    rhythmLine("G4 G4 C4 C4 D4 C4 G4 G4"), rhythmLine("F4 G4 C4 G4 C4 C4 G4 F4"), rhythmLine("G4 C4 C4 G4 F4 G4 C4 C4"),
+    rhythmLine("D4 C4 D4 E4 E4 E4 G4 A4"), rhythmLine("G4 A4 G4 A4 C4 C4 A4 G4")
+  ]),
+  sheetSong("beo-dat-may-troi", "Bèo dạt mây trôi", SONG_TEXT, [
+    rhythmLine("C4 C4 G4 E4 F4 G4 A4 G4"), rhythmLine("G4 E4 E4 E4 D4 E4 G4 C4"), rhythmLine("C4 E4 D4 C4 A4 G4 G4 C4"),
+    rhythmLine("E4 F4 G4 E4 E4 D4 E4 G4"), rhythmLine("C4 E4 D4 C4 A4 G4 C4 C4")
+  ]),
+  sheetSong("inh-la-oi", "Inh lả ơi", SONG_TEXT, [
+    rhythmLine("D4 A4 C4 D4 C4 A4 G4 G4"), rhythmLine("D4 A4 G4 A4 D4 D4 C4 A4"), rhythmLine("C4 A4 C4 G4 D4 D4 A4 G4"),
+    rhythmLine("D4 A4 C4 D4 C4 A4 C4 C4"), rhythmLine("D4 A4 C4 D4 C4 A4 G4 D4")
+  ]),
+  sheetSong("co-la", "Cò lả", SONG_TEXT, [
+    rhythmLine("C4 G4 G4 C4 G4 C4 D4 C4"), rhythmLine("G4 C4 C4 A4 G4 A4 G4 F4"), rhythmLine("F4 C4 C4 G4 A4 G4 F4 C4"),
+    rhythmLine("G4 G4 C4 D4 E4 D4 C4 G4"), rhythmLine("A4 G4 F4 E4 D4 C4 C4 C4")
+  ]),
+  sheetSong("ly-cay-da", "Lý cây đa", SONG_TEXT, [
+    rhythmLine("C4 D4 E4 G4 A4 G4 E4 D4"), rhythmLine("C4 D4 E4 G4 E4 D4 C4 C4"), rhythmLine("G4 A4 G4 E4 D4 E4 G4 A4"),
+    rhythmLine("G4 E4 D4 C4 D4 E4 G4 E4"), rhythmLine("D4 C4 D4 E4 D4 C4 C4 C4")
+  ]),
+  sheetSong("ode-to-joy", "Khải hoàn ca", "Nốt đen, một nốt đen chấm và nốt trắng ở cuối câu.", [[
+    ["E4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["D4", 2],
+    ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 3], ["D4", 1], ["D4", 4],
+    ["E4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["D4", 2],
+    ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["D4", 2], ["C4", 2], ["C4", 4]
+  ]]),
+  sheetSong("frere-jacques", "Kìa con bướm vàng", "Có nốt trắng và nốt móc. Chỗ nốt trắng giữ hơi hai phách.", [[
+    ["C4", 2], ["D4", 2], ["E4", 2], ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["C4", 2],
+    ["E4", 2], ["F4", 2], ["G4", 4], ["E4", 2], ["F4", 2], ["G4", 4],
+    ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 2], ["C4", 2], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 2], ["C4", 2],
+    ["C4", 2], ["G4", 2], ["C4", 4], ["C4", 2], ["G4", 2], ["C4", 4]
+  ]]),
+  sheetSong("twinkle", "Twinkle Twinkle Little Star", "Sáu nốt đen rồi một nốt trắng. Nốt trắng là nốt ngân ở cuối câu.", [[
+    ["C4", 2], ["C4", 2], ["G4", 2], ["G4", 2], ["A4", 2], ["A4", 2], ["G4", 4],
+    ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["D4", 2], ["D4", 2], ["C4", 4],
+    ["G4", 2], ["G4", 2], ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["D4", 4],
+    ["G4", 2], ["G4", 2], ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["D4", 4],
+    ["C4", 2], ["C4", 2], ["G4", 2], ["G4", 2], ["A4", 2], ["A4", 2], ["G4", 4],
+    ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["D4", 2], ["D4", 2], ["C4", 4]
+  ]]),
+  sheetSong("mary-lamb", "Mary Had a Little Lamb", "Nốt đen xen nốt trắng, câu cuối là nốt tròn.", [[
+    ["E4", 2], ["D4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 2], ["E4", 4],
+    ["D4", 2], ["D4", 2], ["D4", 4], ["E4", 2], ["G4", 2], ["G4", 4],
+    ["E4", 2], ["D4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 2], ["E4", 2], ["E4", 2],
+    ["D4", 2], ["D4", 2], ["E4", 2], ["D4", 2], ["C4", 8]
+  ]]),
+  sheetSong("london-bridge", "London Bridge", "Cuối mỗi câu là nốt trắng.", [[
+    ["G4", 2], ["A4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["F4", 2], ["G4", 4],
+    ["D4", 2], ["E4", 2], ["F4", 4], ["E4", 2], ["F4", 2], ["G4", 4],
+    ["G4", 2], ["A4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["F4", 2], ["G4", 4],
+    ["D4", 2], ["E4", 2], ["F4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["C4", 4]
+  ]]),
+  sheetSong("row-row", "Row Row Row Your Boat", "Có nốt móc và một nốt trắng ở cuối.", [[
+    ["C4", 2], ["C4", 1], ["C4", 1], ["D4", 2], ["E4", 2],
+    ["E4", 2], ["D4", 1], ["E4", 1], ["F4", 2], ["G4", 2],
+    ["C4", 1], ["C4", 1], ["C4", 1], ["G4", 1], ["G4", 1], ["G4", 1], ["E4", 2],
+    ["E4", 1], ["E4", 1], ["E4", 1], ["C4", 1], ["C4", 1], ["C4", 1], ["G4", 2],
+    ["C4", 2], ["C4", 1], ["C4", 1], ["D4", 2], ["E4", 2],
+    ["F4", 2], ["E4", 2], ["D4", 4]
+  ]]),
+  sheetSong("jingle-bells", "Jingle Bells", "Nốt đen, nốt trắng, nốt móc và nốt tròn.", [[
+    ["E4", 2], ["E4", 2], ["E4", 4], ["E4", 2], ["E4", 2], ["E4", 4],
+    ["E4", 2], ["G4", 2], ["C4", 2], ["D4", 2], ["E4", 8],
+    ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["E4", 1], ["E4", 1], ["E4", 2], ["E4", 2],
+    ["E4", 2], ["D4", 2], ["D4", 2], ["E4", 2], ["D4", 4], ["G4", 4],
+    ["E4", 2], ["E4", 2], ["E4", 4], ["E4", 2], ["E4", 2], ["E4", 4],
+    ["E4", 2], ["G4", 2], ["C4", 2], ["D4", 2], ["E4", 8],
+    ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["E4", 2],
+    ["G4", 2], ["G4", 2], ["F4", 2], ["D4", 2], ["C4", 8]
+  ]]),
+  sheetSong("amazing-grace", "Amazing Grace", "Nốt trắng xen nốt đen. Nốt trắng giữ hai phách.", [[
+    ["G4", 2], ["C4", 2], ["E4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
+    ["A4", 4], ["G4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
+    ["G4", 2], ["C4", 2], ["E4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
+    ["A4", 4], ["G4", 2], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 4]
+  ]]),
+  sheetSong("when-saints", "When the Saints Go Marching In", "Phần lớn là nốt đen, câu kết dùng nốt trắng.", [[
+    ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2],
+    ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["E4", 2], ["C4", 2], ["E4", 2], ["D4", 2],
+    ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 2], ["D4", 2], ["C4", 4],
+    ["E4", 2], ["E4", 2], ["E4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2],
+    ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["E4", 4], ["C4", 4]
+  ]])
+];
 PIECES.push(...SONG_LIBRARY);
 
 const STUDY_LIBRARY = [
@@ -2337,7 +2383,7 @@ function paintSongSheets() {
 
 function pieceGroups() {
   return [
-    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "15 giai điệu dân ca và bài hát truyền thống, giản lược cho sáo Đô. Bấm Chạy theo tiếng phách để xem thời gian chạy, hoặc Tập dòng để luyện từng dòng." },
+    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "Sheet có nốt móc, nốt đen và nốt trắng. Đầu rỗng là nốt dài hơn. Bấm Chạy theo tiếng phách hoặc Tập dòng." },
     { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "Đi từ nốt tròn, nốt trắng, nốt đen, nốt móc, rồi nốt chấm. Đầu nốt rỗng là nốt dài. Đuôi cong là nốt móc. Dấu chấm làm nốt dài thêm một nửa." },
     { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
