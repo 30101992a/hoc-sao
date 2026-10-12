@@ -119,6 +119,8 @@
   .practice-fit .score-scroll { flex: 1; min-height: 0; overflow: hidden; }
   .practice-fit > .card .score-scroll { flex: 0 1 auto; max-height: 340px; min-height: 0; overflow: hidden; align-items: center; justify-content: flex-start; }
   .practice-fit > .card .score-scroll svg.staff { max-height: none; width: auto; height: auto; }
+  .practice-fit > .card .score-scroll.score-zoom { flex: 0 0 auto; max-height: none; width: 100%; overflow: visible; justify-content: center; }
+  .practice-fit > .card .score-scroll.score-zoom svg.staff { width: auto; height: min(58vh, 560px); max-width: 100%; }
   .practice-fit > .card .choices { overflow: hidden; min-height: 0; flex: 1 1 auto; }
   .practice-fit > .tap-layout { flex: 1; min-height: 0; height: auto; overflow: hidden; }
   .practice-fit .tap-layout > .card { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
@@ -710,6 +712,12 @@
     .song-focus { gap: 5px; padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom)); }
     .song-focus-head p { max-height: 2.8em; overflow: hidden; }
     .song-focus-score { padding: 0; }
+  }
+  .practice-fit > .card .score-scroll.score-zoom {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
   }
 </style>
 </head>
@@ -1623,8 +1631,8 @@ function splitSystems(items, totalE) {
 }
 function scoreSVG(notes, opt) {
   const laid = layout(notes);
-  const step = opt.compact ? 12 : 18;
-  const gY = opt.compact ? 108 : 177;
+  const step = opt.zoom ? 36 : opt.compact ? 12 : 18;
+  const gY = opt.zoom ? Math.round(36 * 177 / 18) : opt.compact ? 108 : 177;
   const yPos = (pos) => gY - (pos - 2) * step;
   const bottomLine = yPos(0);
   const showLane = !!opt.lane || !!opt.foot || !!opt.tongue;
@@ -1634,7 +1642,7 @@ function scoreSVG(notes, opt) {
   const left = opt.clef === false ? 28 : 156;
   const lineBeats = Math.max(1, ...systems.map((s) => (s.to - s.from) / 2));
   const maxW = Math.max(320, opt.maxW || 640);
-  let beatW = opt.compact ? (opt.maxW ? Math.max(46, Math.floor((maxW - left - 28) / lineBeats)) : 54) : (lineBeats <= 4 ? 100 : 78);
+  let beatW = opt.zoom ? 150 : opt.compact ? (opt.maxW ? Math.max(46, Math.floor((maxW - left - 28) / lineBeats)) : 54) : (lineBeats <= 4 ? 100 : 78);
   if (left + lineBeats * beatW + 28 > maxW) {
     beatW = Math.max(46, Math.floor((maxW - left - 28) / lineBeats));
   }
@@ -1904,7 +1912,7 @@ function footHTML() {
 }
 function mountScore(notes, opt) {
   const view = scoreSVG(notes, opt);
-  return `<div class="score-scroll ${opt.fullSheet ? "full-sheet" : ""} ${state.hint ? "" : "assist-off"}" id="scoreHost" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
+  return `<div class="score-scroll ${opt.zoom ? "score-zoom" : ""} ${opt.fullSheet ? "full-sheet" : ""} ${state.hint ? "" : "assist-off"}" id="scoreHost" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
 function previewScore(notes, pieceId, fullSheet = false) {
   const songHints = fullSheet;
@@ -2496,7 +2504,7 @@ function paintQuestion() {
   const choices = item.choices.map((c) => `<button type="button" data-act="answer" data-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("");
   return `<div class="card">
     <p class="progress">${state.practice === "name" ? "Nốt" : "Câu"} ${q.index + 1}/${q.items.length} · cả buổi: đúng ${state.stats.ok}, sai ${state.stats.bad}</p>
-    ${mountScore(item.notes, { lane: false, hot: item.hot, time: layout(item.notes).totalE % 8 === 0 && layout(item.notes).totalE >= 8 })}
+    ${mountScore(item.notes, { lane: false, hot: item.hot, zoom: state.practice === "name", time: layout(item.notes).totalE % 8 === 0 && layout(item.notes).totalE >= 8 })}
     <p><strong>${esc(item.prompt)}</strong></p>
     <div class="choices" id="choices">${choices}</div>
     <p class="feedback" id="feedback"></p>
@@ -3611,6 +3619,16 @@ function fitScores() {
     document.querySelectorAll(".score-scroll").forEach((host) => {
       const all = [...host.querySelectorAll(":scope > svg.staff")];
       if (!all.length) return;
+      if (host.classList.contains("score-zoom")) {
+        all.forEach((svg) => {
+          svg.style.display = "block";
+          svg.style.width = "auto";
+          svg.style.height = "min(58vh, 560px)";
+          svg.style.maxWidth = "100%";
+          svg.style.maxHeight = "none";
+        });
+        return;
+      }
       if (host.classList.contains("fit-viewport")) {
         all.forEach((svg) => { svg.style.display = "block"; });
         host.parentElement?.querySelector(":scope > .line-switch")?.remove();
