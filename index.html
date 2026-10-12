@@ -1062,7 +1062,14 @@ const SONG_LIBRARY = [
     ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 2], ["D4", 2], ["C4", 4],
     ["E4", 2], ["E4", 2], ["E4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["F4", 2], ["G4", 2],
     ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["E4", 4], ["C4", 4]
-  ]])
+  ]]),
+  sheetSong("dan-ga", "Đàn gà trong sân", SONG_TEXT, [
+    rhythmLine("C4 D4 E4 E4 C4 D4 C4 D4"),
+    rhythmLine("E4 E4 F4 G4 E4 F4 D4 E4"),
+    rhythmLine("G4 G4 G4 G4 G4 A4 G4 F4"),
+    rhythmLine("G4 F4 E4 E4 E4 F4 E4 D4"),
+    rhythmLine("E4 D4 C4 C4 D4 E4 D4 C4")
+  ], [2, 4])
 ];
 PIECES.push(...SONG_LIBRARY);
 
@@ -2374,17 +2381,30 @@ function paintRhythm() {
   return `<div class="sheet ${pane === "bai" && state.shelf === "songs" ? "songs-mode" : ""}"><div class="piece-tabs pane-tabs">${paneTabs}</div>${body}</div>`;
 }
 
+function sheetCatalog() {
+  const byId = (id) => PIECES.find((p) => p.id === id);
+  return [
+    { id: "dan-ca", title: "Dân ca, bài hát", pieces: SONG_LIBRARY },
+    { id: "luyen", title: "Bài luyện nốt", pieces: STUDY_LIBRARY },
+    { id: "sao", title: "Bài sáo", pieces: ["rucon", "lysao", "lyngua"].map(byId).filter(Boolean) }
+  ];
+}
 function paintSongSheets() {
-  const piece = SONG_LIBRARY.find((song) => song.id === state.shelfPiece) || SONG_LIBRARY[0];
+  const groups = sheetCatalog();
+  const all = groups.flatMap((g) => g.pieces);
+  const piece = all.find((song) => song.id === state.shelfPiece) || all[0];
+  const group = groups.find((g) => g.pieces.some((p) => p.id === piece.id)) || groups[0];
   state.shelf = "songs";
   state.shelfPiece = piece.id;
   statePlan = beatPlan(resolve(piece.seq));
   lampBar = 0;
-  const songTabs = SONG_LIBRARY.map((song) => `<button type="button" class="btn ${song.id === piece.id ? "on" : ""}" data-act="shelf-piece" data-id="${song.id}" title="${esc(song.title)}">${esc(song.title)}</button>`).join("");
+  const groupTabs = groups.map((g) => `<button type="button" class="btn ${g.id === group.id ? "on" : ""}" data-act="sheet-group" data-group="${g.id}">${esc(g.title)} · ${g.pieces.length}</button>`).join("");
+  const songTabs = group.pieces.map((song) => `<button type="button" class="btn ${song.id === piece.id ? "on" : ""}" data-act="shelf-piece" data-id="${song.id}" title="${esc(song.title)}">${esc(song.title)}</button>`).join("");
   return `<div class="sheet song-library">
-    <div class="piece-tabs pane-tabs"><strong>Tập thổi sheet</strong><span>Chọn bài, chỉnh nhịp, rồi chạy hoặc tập thổi theo dòng.</span></div>
+    <div class="piece-tabs pane-tabs"><strong>Tủ sheet · ${all.length} bản</strong><span>Dân ca, bài luyện nốt và bài sáo ngắn. Chọn nhóm, rồi chọn bài.</span></div>
     <div class="sheet-rest songs-mode">
-      <div class="piece-tabs nums song-picker" aria-label="Chọn bài hát">${songTabs}</div>
+      <div class="piece-tabs">${groupTabs}</div>
+      <div class="piece-tabs nums song-picker" aria-label="Chọn bài">${songTabs}</div>
       <div class="pieces"><div class="piece">
         <div class="piece-head">
           <div><strong>${esc(piece.title)}</strong><span class="badge">Bản tập sáo Đô</span><p class="piece-blurb">${esc(piece.text)}</p></div>
@@ -4718,6 +4738,13 @@ const actions = {
     state.shelf = el.dataset.shelf;
     const g = pieceGroups().find((x) => x.id === state.shelf);
     state.shelfPiece = g ? g.ids[0] : state.shelfPiece;
+    go();
+  },
+  "sheet-group"(el) {
+    const group = sheetCatalog().find((g) => g.id === el.dataset.group);
+    if (!group || !group.pieces.length) return;
+    state.shelfPiece = group.pieces[0].id;
+    state.focusSong = "";
     go();
   },
   "shelf-piece"(el) {
