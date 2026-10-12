@@ -122,6 +122,11 @@
   .practice-fit > .card .score-scroll.score-zoom { flex: 0 0 auto; max-height: 240px; width: 100%; overflow: hidden; justify-content: center; }
   .practice-fit > .card .score-scroll.score-zoom svg.staff { width: auto; height: 220px; max-width: 100%; }
   .practice-fit > .card .choices { overflow: visible; min-height: 0; flex: 0 0 auto; }
+  .method-card { overflow: auto; }
+  .method-list { margin: 8px 0 12px; padding-left: 0; list-style: none; display: grid; gap: 10px; }
+  .method-list li { background: var(--raise); border-radius: 8px; padding: 10px 12px; }
+  .method-list strong { display: block; margin-bottom: 4px; }
+  .method-list span { color: var(--soft); }
   .practice-fit > .tap-layout { flex: 1; min-height: 0; height: auto; overflow: hidden; }
   .practice-fit .tap-layout > .card { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   .practice-fit .tap-layout .score-scroll { flex: 1; min-height: 0; overflow: hidden; }
@@ -2515,6 +2520,7 @@ function melodyFrom(pattern, scale) {
 function paintPractice() {
   const levels = [1, 2, 3].map((n) => `<button type="button" class="btn ${state.level === n ? "on" : ""}" data-act="level" data-level="${n}">${n === 1 ? "Dễ" : n === 2 ? "Vừa" : "Khá"}</button>`).join("");
   const modes = [
+    ["method", "Cách luyện"],
     ["name", "Nhận diện nốt"],
     ["value", "Nhận phách"],
     ["read", "Đọc ô nhịp"],
@@ -2522,16 +2528,43 @@ function paintPractice() {
     ["doi", "Đổi ngón"]
   ].map(([id, label]) => `<button type="button" class="btn ${state.practice === id ? "primary" : ""}" data-act="practice" data-mode="${id}">${label}</button>`).join("");
   let body = "";
-  if (state.practice === "tap") body = paintTap();
+  if (state.practice === "method") body = paintMethod();
+  else if (state.practice === "tap") body = paintTap();
   else if (state.practice === "doi") body = paintPairs();
   else {
     if (!state.quiz || state.quiz.mode !== state.practice || state.quiz.level !== state.level || state.quiz.reg !== state.noteReg) state.quiz = makeQuiz();
     body = paintQuestion();
   }
-  const levelRow = state.practice === "tap" || state.practice === "doi" ? "" : `<div class="seg">${levels}</div>`;
+  const levelRow = state.practice === "tap" || state.practice === "doi" || state.practice === "method" ? "" : `<div class="seg">${levels}</div>`;
   const regRow = state.practice === "name" ? noteRegButtons() : "";
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
   return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
+}
+function paintMethod() {
+  const steps = [
+    ["1", "Ra tiếng", "Khép môi thành một khe nhỏ, thổi ngang qua lỗ thổi. Ra một tiếng đều là đủ. Chưa ra tiếng thì xoay sáo một chút và thu khe môi lại. Đừng thổi mạnh thêm."],
+    ["2", "Giữ hơi", "Chọn một nốt. Giữ thẳng 6 đến 8 giây, tiếng không phập phù và không tắt giữa chừng. Hết hơi thì nghỉ, rồi thổi lại. Phần Xông hơi là chỗ tập việc này."],
+    ["3", "Quãng 1", "Bịt hết lỗ là Sol. Mỗi nốt cao hơn mở thêm đúng một lỗ, từ lỗ xa miệng lần vào. Thổi chậm từng nốt, rồi đi lên và đi xuống. Tay đổi mà hơi không đứt."],
+    ["4", "Lưỡi và luyến", "Muốn tách tiếng thì mỗi nốt nói một chữ tư. Muốn nối thì chỉ đánh lưỡi nốt đầu, nốt sau để hơi chạy tiếp. Khi mới tập, một lần chỉ làm một việc."],
+    ["5", "Trường độ", "Đếm 1 2 3 4. Nốt đen dài một phách, nốt trắng hai phách, nốt tròn bốn phách, nốt móc nửa phách. Dấu chấm làm nốt dài thêm một nửa. Mười lăm bài trong tab Đập và nhấc đi theo thứ tự này."],
+    ["6", "Quãng 2", "Làm khi quãng 1 đã sạch. Cùng thế tay. Hơi nhanh hơn, khe môi nhỏ hơn. Không thổi mạnh. Quãng 3 để sau, khi quãng 2 đã lên đều."],
+    ["7", "Bài hát", "Cuối buổi mới thổi bài. Chậm hơn tốc độ bài. Đúng nốt trước, đúng nhịp sau. Sai thì dừng ở câu đó, tập riêng câu ấy, rồi thổi tiếp."]
+  ];
+  return `<div class="card method-card">
+    <p class="eyebrow">Mỗi ngày 20 đến 30 phút</p>
+    <h2>Một buổi luyện</h2>
+    <p>Đi từ trên xuống. Bước trước còn rè thì chưa sang bước sau. Các sách tự học đều xoay quanh thứ tự này: hơi, nốt, lưỡi, nhịp, rồi mới tới bài.</p>
+    <ol class="method-list">
+      ${steps.map(([n, title, body]) => `<li><strong>${n}. ${esc(title)}</strong><span>${esc(body)}</span></li>`).join("")}
+    </ol>
+    <p><strong>Ba quy tắc.</strong> Mỗi lỗi chỉ sửa một việc: hoặc hơi, hoặc ngón, hoặc lưỡi. Tập chậm đến khi sạch rồi mới tăng tốc. Cuối buổi thổi một câu và nghe lại.</p>
+    <p>Người mới nên dùng sáo tone Đô. Beat khác tông thì chuyển beat cho khớp sáo. Đừng đổi thế tay cho khớp beat.</p>
+    <div class="row">
+      <button type="button" class="btn primary" data-act="tab" data-tab="breath">Tập giữ hơi</button>
+      <button type="button" class="btn" data-act="open-study">Mở 15 bài tập</button>
+      <button type="button" class="btn" data-act="tab" data-tab="sheet">Mở sheet</button>
+    </div>
+  </div>`;
 }
 function paintPairs() {
   const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
