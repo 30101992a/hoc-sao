@@ -2283,7 +2283,6 @@ function paintRhythm() {
     }).join("");
     const mix = drillShelf(shelf.id) ? `<button type="button" class="btn" data-act="mix-piece">Trộn bài mới</button>` : "";
     body = `<div class="sheet-rest ${shelf.id === "songs" ? "songs-mode" : ""}">
-      <div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="shelf" data-shelf="study">Mở 15 bài tập sáo trúc</button></div>
       <div class="piece-tabs">${groupTabs}</div>
       ${shelf.note ? `<p class="foot-note">${esc(shelf.note)}</p>` : ""}
       <div class="piece-tabs nums">${pieceTabs}${mix}</div>
@@ -2470,7 +2469,7 @@ function paintPractice() {
   const levelRow = state.practice === "tap" || state.practice === "doi" ? "" : `<div class="seg">${levels}</div>`;
   const regRow = state.practice === "name" ? noteRegButtons() : "";
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
-  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="open-study">Mở 15 bài tập sáo trúc</button></div><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
+  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
 }
 function paintPairs() {
   const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
