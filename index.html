@@ -1040,6 +1040,7 @@ const state = {
   practice: "name",
   level: saved.level || 1,
   extras: !!saved.extras,
+  noteReg: saved.noteReg || 1,
   bpm: saved.bpm || 72,
   voice: saved.scoreNotes === true,
   metro: saved.metro !== false,
@@ -1101,7 +1102,7 @@ function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
       bpm: state.bpm, scoreNotes: state.voice, metro: state.metro, hint: state.hint,
-      extras: state.extras, level: state.level, selected: state.selected, stats: state.stats
+      extras: state.extras, noteReg: state.noteReg, level: state.level, selected: state.selected, stats: state.stats
     }));
   } catch (err) { /* private mode */ }
 }
@@ -1128,6 +1129,20 @@ function noteById(id) {
   return NOTES.find((n) => n.id === id) || CHROMA.find((n) => n.id === id);
 }
 function activeNotes() { return NOTES.filter((n) => state.extras || !n.extra); }
+function noteRegOf(n) { return n.oct || 1; }
+function focusNotes() {
+  const reg = state.noteReg || 1;
+  return NOTES.filter((n) => noteRegOf(n) === reg);
+}
+function noteRegButtons() {
+  const hint = {
+    1: "Quãng 1: Đồ đến Si, hơi nhẹ.",
+    2: "Quãng 2: cùng thế ngón với quãng 1, hơi nhanh hơn.",
+    3: "Quãng 3: Đồ 3 đến Son 3, hơi nhanh hơn quãng 2."
+  };
+  const buttons = [1, 2, 3].map((r) => `<button type="button" class="btn ${state.noteReg === r ? "on" : ""}" data-act="note-reg" data-reg="${r}">Quãng ${r}</button>`).join("");
+  return `<div class="seg">${buttons}</div><p class="foot-note">${hint[state.noteReg] || hint[1]}</p>`;
+}
 function kindOf(e) {
   if (e >= 8) return "w";
   if (e === 6) return "dh";
@@ -2156,8 +2171,8 @@ function fingerStrip(note) {
 }
 
 function paintNotes() {
-  const scale = activeNotes();
-  const note = noteById(state.selected) || scale[0];
+  const scale = focusNotes();
+  const note = scale.find((n) => n.id === state.selected) || scale[0];
   const shown = scale.map((n) => ({ ...n, e: 2 }));
   const place = PLACE[note.id];
   const ladder = scale.map((n) => `
@@ -2171,7 +2186,8 @@ function paintNotes() {
       <div class="note-main">
         <div class="card note-staff">
           ${mountScore(shown, { map: true, clef: true, time: false, lane: false, color: true, selected: note.id, guidePos: note.pos })}
-          <p class="foot-note">Chọn nốt để xem vị trí và thế ngón. Luyện nhận diện bằng cách chọn đáp án, không cần bật mic.</p>
+          ${noteRegButtons()}
+          <p class="foot-note">Chỉ hiện nốt của quãng đang chọn. Bấm một nốt để xem dòng kẻ và thế ngón.</p>
           <div class="row note-quiz-cta">
             <button type="button" class="btn primary" data-act="goto-quiz">Luyện nhận diện nốt</button>
           </div>
@@ -2330,12 +2346,11 @@ function pieceGroups() {
 }
 
 function makeQuiz() {
-  const scale = activeNotes();
+  const scale = state.practice === "name" ? focusNotes() : activeNotes();
   const level = state.level;
   const items = [];
   if (state.practice === "name") {
-    const fingers = ["Cs4", "Ds4", "Fs4", "Gs4"].map((id) => noteById(id));
-    const pool = scale.concat(fingers);
+    const pool = scale;
     const choices = shuffle(pool.map((n) => ({ id: n.id, label: n.name })));
     for (let i = 0; i < 30; i++) {
       const note = pool[Math.floor(Math.random() * pool.length)];
@@ -2397,7 +2412,7 @@ function makeQuiz() {
       }
     }
   }
-  return { mode: state.practice, level, items, index: 0, locked: false };
+  return { mode: state.practice, level, reg: state.noteReg, items, index: 0, locked: false };
 }
 function phraseOf(e) {
   if (e >= 8) return "4 phách";
@@ -2441,12 +2456,13 @@ function paintPractice() {
   if (state.practice === "tap") body = paintTap();
   else if (state.practice === "doi") body = paintPairs();
   else {
-    if (!state.quiz || state.quiz.mode !== state.practice || state.quiz.level !== state.level) state.quiz = makeQuiz();
+    if (!state.quiz || state.quiz.mode !== state.practice || state.quiz.level !== state.level || state.quiz.reg !== state.noteReg) state.quiz = makeQuiz();
     body = paintQuestion();
   }
   const levelRow = state.practice === "tap" || state.practice === "doi" ? "" : `<div class="seg">${levels}</div>`;
+  const regRow = state.practice === "name" ? noteRegButtons() : "";
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
-  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="open-study">Mở 15 bài tập sáo trúc</button></div><div class="seg">${modes}</div>${levelRow}${body}</div>`;
+  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="piece-tabs featured-study"><button type="button" class="btn primary" data-act="open-study">Mở 15 bài tập sáo trúc</button></div><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
 }
 function paintPairs() {
   const pair = FINGER_PAIRS[state.pair] || FINGER_PAIRS[0];
@@ -4538,6 +4554,14 @@ const actions = {
     const n = noteById(state.selected);
     playPitch(n.midi + 12, 0.8);
   },
+  "note-reg"(el) {
+    state.noteReg = Number(el.dataset.reg) || 1;
+    const pool = focusNotes();
+    if (!pool.some((n) => n.id === state.selected)) state.selected = pool[0].id;
+    state.quiz = null;
+    save();
+    go();
+  },
   "goto-quiz"() {
     state.tab = "practice";
     state.practice = "name";
@@ -4778,7 +4802,7 @@ function onKey(e) {
   if (e.target.matches("input, textarea")) return;
   if (e.repeat) return;
   if (state.tab === "notes" && e.key >= "1" && e.key <= "8") {
-    const n = activeNotes()[Number(e.key) - 1];
+    const n = focusNotes()[Number(e.key) - 1];
     if (n) actions["pick-note"]({ dataset: { id: n.id } });
   }
   if (state.tab === "breath") {
