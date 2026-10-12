@@ -119,9 +119,9 @@
   .practice-fit .score-scroll { flex: 1; min-height: 0; overflow: hidden; }
   .practice-fit > .card .score-scroll { flex: 0 1 auto; max-height: 340px; min-height: 0; overflow: hidden; align-items: center; justify-content: flex-start; }
   .practice-fit > .card .score-scroll svg.staff { max-height: none; width: auto; height: auto; }
-  .practice-fit > .card .score-scroll.score-zoom { flex: 0 0 auto; max-height: none; width: 100%; overflow: visible; justify-content: center; }
-  .practice-fit > .card .score-scroll.score-zoom svg.staff { width: auto; height: min(58vh, 560px); max-width: 100%; }
-  .practice-fit > .card .choices { overflow: hidden; min-height: 0; flex: 1 1 auto; }
+  .practice-fit > .card .score-scroll.score-zoom { flex: 0 0 auto; max-height: 240px; width: 100%; overflow: hidden; justify-content: center; }
+  .practice-fit > .card .score-scroll.score-zoom svg.staff { width: auto; height: 220px; max-width: 100%; }
+  .practice-fit > .card .choices { overflow: visible; min-height: 0; flex: 0 0 auto; }
   .practice-fit > .tap-layout { flex: 1; min-height: 0; height: auto; overflow: hidden; }
   .practice-fit .tap-layout > .card { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   .practice-fit .tap-layout .score-scroll { flex: 1; min-height: 0; overflow: hidden; }
@@ -714,10 +714,10 @@
     .song-focus-score { padding: 0; }
   }
   .practice-fit > .card .score-scroll.score-zoom {
-    height: auto;
+    height: 240px;
     min-height: 0;
-    max-height: none;
-    overflow: visible;
+    max-height: 240px;
+    overflow: hidden;
   }
 </style>
 </head>
@@ -1631,8 +1631,8 @@ function splitSystems(items, totalE) {
 }
 function scoreSVG(notes, opt) {
   const laid = layout(notes);
-  const step = opt.zoom ? 36 : opt.compact ? 12 : 18;
-  const gY = opt.zoom ? Math.round(36 * 177 / 18) : opt.compact ? 108 : 177;
+  const step = opt.zoom ? 22 : opt.compact ? 12 : 18;
+  const gY = opt.zoom ? Math.round(22 * 177 / 18) : opt.compact ? 108 : 177;
   const yPos = (pos) => gY - (pos - 2) * step;
   const bottomLine = yPos(0);
   const showLane = !!opt.lane || !!opt.foot || !!opt.tongue;
@@ -3622,7 +3622,7 @@ function fitScores() {
         all.forEach((svg) => {
           svg.style.display = "block";
           svg.style.width = "auto";
-          svg.style.height = "min(58vh, 560px)";
+          svg.style.height = "220px";
           svg.style.maxWidth = "100%";
           svg.style.maxHeight = "none";
         });
