@@ -408,7 +408,7 @@
   .staff-line { stroke: #2a211b; stroke-width: 2.2; stroke-linecap: square; }
   .staff-line.mark { stroke: var(--accent); stroke-width: 2.6; }
   .note .head { fill: #241c16; }
-  .note.head-open .head { fill: #fbf6ee; stroke: #241c16; stroke-width: 2; }
+  .note.head-open .head { fill: #f4f0e6; stroke: #241c16; stroke-width: 2.4; }
   .note.on .head { fill: var(--accent); }
   .note.on.head-open .head { fill: #fff7f2; stroke: var(--accent); stroke-width: 2.4; }
   .note.hot .halo { opacity: .2; }
@@ -957,42 +957,41 @@ const PIECES = [
 
 // Trường độ tính bằng số móc đơn: 1 nốt móc, 2 nốt đen, 3 đen chấm, 4 trắng, 6 trắng chấm, 8 tròn.
 function rhythmLine(pitches) {
-  const durs = [1, 1, 2, 2, 2, 2, 2, 4];
-  return pitches.trim().split(/\s+/).map((id, i) => [id, durs[i], i === 1 ? "luyen" : ""]);
+  return pitches.trim().split(/\s+/).map((id) => [id, 2, ""]);
 }
-function sheetSong(id, title, text, lines) {
-  return { id, title, level: 1, text, seq: lines.flat() };
+function sheetSong(id, title, text, lines, meter) {
+  return { id, title, level: 1, text, meter: meter || [4, 4], seq: lines.flat() };
 }
-const SONG_TEXT = "Có nốt móc (đuôi cong), nốt đen (đầu đặc) và nốt trắng (đầu rỗng). Nốt càng dài càng phải giữ hơi.";
+const SONG_TEXT = "Nhịp 2/4, mỗi nốt một phách. Vạch đứng chia từng ô hai phách.";
 const SONG_LIBRARY = [
   sheetSong("bac-kim-thang", "Bắc kim thang", SONG_TEXT, [
     rhythmLine("A4 G4 F4 C4 F4 G4 E4 E4"), rhythmLine("E4 G4 C4 C4 C4 G4 E4 A4"), rhythmLine("A4 C4 E4 D4 E4 A4 A4 A4"),
-    rhythmLine("E4 E4 G4 A4 A4 A4 G4 E4"), rhythmLine("F4 C4 E4 G4 E4 A4 G4 C4")
-  ]),
+    rhythmLine("E4 E4 G4 A4 A4 A4 G4 E4"),     rhythmLine("F4 C4 E4 G4 E4 A4 G4 C4")
+  ], [2, 4]),
   sheetSong("ly-cay-bong", "Lý cây bông", SONG_TEXT, [
     rhythmLine("D4 C4 D4 D4 C4 D4 F4 A4"), rhythmLine("A4 C4 A4 C4 D4 C4 A4 C4"), rhythmLine("D4 D4 C4 F4 C4 A4 C4 D4"),
-    rhythmLine("C4 A4 C4 D4 G4 A4 C4 A4"), rhythmLine("G4 F4 D4 F4 C4 D4 F4 C4")
-  ]),
+    rhythmLine("C4 A4 C4 D4 G4 A4 C4 A4"),     rhythmLine("G4 F4 D4 F4 C4 D4 F4 C4")
+  ], [2, 4]),
   sheetSong("trong-com", "Trống cơm", SONG_TEXT, [
     rhythmLine("G4 G4 C4 C4 D4 C4 G4 G4"), rhythmLine("F4 G4 C4 G4 C4 C4 G4 F4"), rhythmLine("G4 C4 C4 G4 F4 G4 C4 C4"),
-    rhythmLine("D4 C4 D4 E4 E4 E4 G4 A4"), rhythmLine("G4 A4 G4 A4 C4 C4 A4 G4")
-  ]),
+    rhythmLine("D4 C4 D4 E4 E4 E4 G4 A4"),     rhythmLine("G4 A4 G4 A4 C4 C4 A4 G4")
+  ], [2, 4]),
   sheetSong("beo-dat-may-troi", "Bèo dạt mây trôi", SONG_TEXT, [
     rhythmLine("C4 C4 G4 E4 F4 G4 A4 G4"), rhythmLine("G4 E4 E4 E4 D4 E4 G4 C4"), rhythmLine("C4 E4 D4 C4 A4 G4 G4 C4"),
-    rhythmLine("E4 F4 G4 E4 E4 D4 E4 G4"), rhythmLine("C4 E4 D4 C4 A4 G4 C4 C4")
-  ]),
+    rhythmLine("E4 F4 G4 E4 E4 D4 E4 G4"),     rhythmLine("C4 E4 D4 C4 A4 G4 C4 C4")
+  ], [2, 4]),
   sheetSong("inh-la-oi", "Inh lả ơi", SONG_TEXT, [
     rhythmLine("D4 A4 C4 D4 C4 A4 G4 G4"), rhythmLine("D4 A4 G4 A4 D4 D4 C4 A4"), rhythmLine("C4 A4 C4 G4 D4 D4 A4 G4"),
-    rhythmLine("D4 A4 C4 D4 C4 A4 C4 C4"), rhythmLine("D4 A4 C4 D4 C4 A4 G4 D4")
-  ]),
+    rhythmLine("D4 A4 C4 D4 C4 A4 C4 C4"),     rhythmLine("D4 A4 C4 D4 C4 A4 G4 D4")
+  ], [2, 4]),
   sheetSong("co-la", "Cò lả", SONG_TEXT, [
     rhythmLine("C4 G4 G4 C4 G4 C4 D4 C4"), rhythmLine("G4 C4 C4 A4 G4 A4 G4 F4"), rhythmLine("F4 C4 C4 G4 A4 G4 F4 C4"),
-    rhythmLine("G4 G4 C4 D4 E4 D4 C4 G4"), rhythmLine("A4 G4 F4 E4 D4 C4 C4 C4")
-  ]),
+    rhythmLine("G4 G4 C4 D4 E4 D4 C4 G4"),     rhythmLine("A4 G4 F4 E4 D4 C4 C4 C4")
+  ], [2, 4]),
   sheetSong("ly-cay-da", "Lý cây đa", SONG_TEXT, [
     rhythmLine("C4 D4 E4 G4 A4 G4 E4 D4"), rhythmLine("C4 D4 E4 G4 E4 D4 C4 C4"), rhythmLine("G4 A4 G4 E4 D4 E4 G4 A4"),
-    rhythmLine("G4 E4 D4 C4 D4 E4 G4 E4"), rhythmLine("D4 C4 D4 E4 D4 C4 C4 C4")
-  ]),
+    rhythmLine("G4 E4 D4 C4 D4 E4 G4 E4"),     rhythmLine("D4 C4 D4 E4 D4 C4 C4 C4")
+  ], [2, 4]),
   sheetSong("ode-to-joy", "Khải hoàn ca", "Nốt đen, một nốt đen chấm và nốt trắng ở cuối câu.", [[
     ["E4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["G4", 2], ["F4", 2], ["E4", 2], ["D4", 2],
     ["C4", 2], ["C4", 2], ["D4", 2], ["E4", 2], ["E4", 3], ["D4", 1], ["D4", 4],
@@ -1043,12 +1042,15 @@ const SONG_LIBRARY = [
     ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["F4", 2], ["E4", 2], ["E4", 2], ["E4", 2],
     ["G4", 2], ["G4", 2], ["F4", 2], ["D4", 2], ["C4", 8]
   ]]),
-  sheetSong("amazing-grace", "Amazing Grace", "Nốt trắng xen nốt đen. Nốt trắng giữ hai phách.", [[
-    ["G4", 2], ["C4", 2], ["E4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
-    ["A4", 4], ["G4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
-    ["G4", 2], ["C4", 2], ["E4", 4], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 2],
-    ["A4", 4], ["G4", 2], ["C4", 2], ["E4", 2], ["D4", 2], ["C4", 4]
-  ]]),
+  sheetSong("amazing-grace", "Amazing Grace", "Nhịp 3/4. Mỗi ô ba phách, đúng khuôn bài hát này.", [[
+    ["G4", 2], ["C4", 2], ["E4", 2],
+    ["C4", 2], ["E4", 2], ["D4", 2],
+    ["C4", 2], ["A4", 2], ["G4", 2],
+    ["E4", 2], ["D4", 2], ["C4", 2],
+    ["G4", 2], ["C4", 2], ["E4", 2],
+    ["C4", 2], ["E4", 2], ["D4", 2],
+    ["C4", 2], ["G4", 2], ["C4", 2]
+  ]], [3, 4]),
   sheetSong("when-saints", "When the Saints Go Marching In", "Phần lớn là nốt đen, câu kết dùng nốt trắng.", [[
     ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2],
     ["C4", 2], ["E4", 2], ["F4", 2], ["G4", 2], ["E4", 2], ["C4", 2], ["E4", 2], ["D4", 2],
@@ -1066,7 +1068,7 @@ const STUDY_LIBRARY = [
   ["study-change", "04 · Đen xen trắng", 1, "Nốt trắng giữ 2 phách, nốt đen 1 phách. Đừng cắt hơi của nốt trắng sớm.", [["C4", 4], ["D4", 2], ["E4", 2], ["F4", 4], ["G4", 4], ["A4", 2], ["G4", 2], ["E4", 4], ["D4", 4], ["C4", 4]]],
   ["study-leaps", "05 · Nhảy quãng, nốt trắng", 2, "Mỗi nốt trắng dài 2 phách. Nốt sau mỗi cặp có cung luyến: nối hơi, không đánh lưỡi lại.", [["C4", 4], ["E4", 4, "luyen"], ["D4", 4], ["F4", 4, "luyen"], ["E4", 4], ["G4", 4, "luyen"], ["C4", 8]]],
   ["study-eighths", "06 · Nốt móc đơn", 2, "Nốt móc có đuôi cong, dài nửa phách. Hai nốt móc ăn một phách. Nốt cuối là nốt trắng.", [["C4", 1], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 4]]],
-  ["study-slur-pairs", "07 · Luyến trắng và đen", 2, "Nốt trắng đánh lưỡi. Nốt đen có cung luyến thì nối hơi, không bật lưỡi.", [["C4", 4], ["D4", 2, "luyen"], ["E4", 2, "luyen"], ["F4", 4], ["G4", 2, "luyen"], ["A4", 2, "luyen"], ["G4", 4], ["E4", 2, "luyen"], ["D4", 2, "luyen"], ["C4", 4]]],
+  ["study-slur-pairs", "07 · Luyến trắng và đen", 2, "Nốt trắng đánh lưỡi. Nốt đen có cung luyến thì nối hơi, không bật lưỡi.", [["C4", 4], ["D4", 2, "luyen"], ["E4", 2, "luyen"], ["F4", 4], ["G4", 2, "luyen"], ["A4", 2, "luyen"], ["G4", 4], ["E4", 2, "luyen"], ["D4", 2, "luyen"], ["C4", 8]]],
   ["study-slur-scale", "08 · Luyến thang âm", 2, "Cụm hai nốt: nốt đầu đánh lưỡi, nốt sau luyến. Câu kết bằng nốt trắng.", [["C4", 2], ["D4", 2, "luyen"], ["E4", 2], ["F4", 2, "luyen"], ["G4", 2], ["A4", 2, "luyen"], ["G4", 2], ["F4", 2, "luyen"], ["E4", 2], ["D4", 2, "luyen"], ["C4", 4]]],
   ["study-mix", "09 · Nốt trắng chấm", 2, "Nốt trắng chấm dài 3 phách, có dấu chấm bên phải. Nốt đen đứng sau cho đủ ô.", [["C4", 6], ["D4", 2], ["E4", 6], ["F4", 2], ["G4", 6], ["E4", 2], ["D4", 2], ["C4", 6]]],
   ["study-dotted", "10 · Nốt đen chấm", 2, "Nốt đen chấm dài 1½ phách, nốt móc sau dài nửa phách. Cộng lại đúng 2 phách.", [["C4", 3], ["D4", 1], ["E4", 3], ["F4", 1], ["G4", 3], ["A4", 1], ["G4", 3], ["E4", 1], ["D4", 4], ["C4", 4]]],
@@ -1660,16 +1662,22 @@ function catchMisses(now) {
   }
 }
 
-function splitSystems(items, totalE) {
-  const cap = 16;
+function eighthsPerBar(meter) {
+  const m = meter || [4, 4];
+  return m[0] * (8 / m[1]);
+}
+function splitSystems(items, totalE, perBar) {
+  const bar = perBar || 8;
+  const cap = bar * 2;
   if (totalE <= cap) return [{ from: 0, to: totalE }];
   const out = [];
   let at = 0;
   while (at < totalE - 1e-6) {
     let to = Math.min(totalE, at + cap);
-    const crossing = items.find((n) => n.start < to && n.start + n.e > to);
+    if (to < totalE) to = Math.min(totalE, Math.ceil((to - 1e-6) / bar) * bar);
+    const crossing = items.find((n) => n.start < to - 1e-6 && n.start + n.e > to + 1e-6);
     if (crossing) to = crossing.start + crossing.e;
-    if (to <= at) to = totalE;
+    if (to <= at + 1e-6) to = Math.min(totalE, at + bar);
     out.push({ from: at, to });
     at = to;
   }
@@ -1677,6 +1685,8 @@ function splitSystems(items, totalE) {
 }
 function scoreSVG(notes, opt) {
   const laid = layout(notes);
+  const meter = opt.meter || [4, 4];
+  const perBar = eighthsPerBar(meter);
   const step = opt.zoom ? 22 : opt.compact ? 12 : 18;
   const gY = opt.zoom ? Math.round(22 * 177 / 18) : opt.compact ? 108 : 177;
   const yPos = (pos) => gY - (pos - 2) * step;
@@ -1684,7 +1694,7 @@ function scoreSVG(notes, opt) {
   const showLane = !!opt.lane || !!opt.foot || !!opt.tongue;
   const showFoot = opt.foot === undefined ? !!opt.lane : !!opt.foot;
   const showTongue = opt.tongue === undefined ? !!opt.lane : !!opt.tongue;
-  const systems = splitSystems(laid.items, laid.totalE);
+  const systems = splitSystems(laid.items, laid.totalE, perBar);
   const left = opt.clef === false ? 28 : 156;
   const lineBeats = Math.max(1, ...systems.map((s) => (s.to - s.from) / 2));
   const maxW = Math.max(320, opt.maxW || 640);
@@ -1697,7 +1707,7 @@ function scoreSVG(notes, opt) {
   const laneExtra = showFoot && showTongue ? 108 : showFoot ? 60 : showTongue ? 92 : 0;
   const blockH = showLane ? laneY + laneExtra : bottomLine + (opt.map ? Math.ceil(step * 4.3) : 32);
   const width = left + lineBeats * beatW + 28;
-  const fullBar = laid.totalE >= 8 && laid.totalE % 8 === 0;
+  const fullBar = laid.totalE >= perBar && Math.abs(laid.totalE / perBar - Math.round(laid.totalE / perBar)) < 0.01;
   const laneSize = beatW < 72 ? 12 : 13;
   const clefGuess = opt.clef === false ? 0 : step * 12.1;
   const clefPad = opt.clef === false ? 4 : Math.max(36, Math.ceil(clefGuess * 0.98 - (gY + clefGuess / 6)));
@@ -1732,11 +1742,11 @@ function scoreSVG(notes, opt) {
     if (opt.time !== false && fullBar && opt.clef !== false) {
       const tx = 118;
       const size = step * 2.5;
-      parts.push(`<text x="${tx}" y="${y(6)}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="${size}" font-weight="700" fill="#241c16">4</text>`);
-      parts.push(`<text x="${tx}" y="${y(2)}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="${size}" font-weight="700" fill="#241c16">4</text>`);
+      parts.push(`<text x="${tx}" y="${y(6)}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="${size}" font-weight="700" fill="#241c16">${meter[0]}</text>`);
+      parts.push(`<text x="${tx}" y="${y(2)}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="${size}" font-weight="700" fill="#241c16">${meter[1]}</text>`);
     }
     if (fullBar && !opt.map) {
-      for (let e = sys.from; e <= sys.to; e += 8) {
+      for (let e = sys.from; e <= sys.to + 0.01; e += perBar) {
         const x = left + ((e - sys.from) / 2) * beatW;
         const last = e === laid.totalE;
         parts.push(`<line x1="${x}" y1="${y(8)}" x2="${x}" y2="${y(0)}" stroke="#241c16" stroke-width="${last ? 3.2 : 1.3}"/>`);
@@ -1745,14 +1755,14 @@ function scoreSVG(notes, opt) {
     } else if (!opt.compact) {
       parts.push(`<line x1="${left - 16}" y1="${y(8)}" x2="${left - 16}" y2="${y(0)}" stroke="#241c16" stroke-width="1.3"/>`);
     }
-    const groups = eighthGroups(items);
+    const groups = eighthGroups(items, meter[1] === 8 ? 3 : 2);
     const beamed = new Set();
-    groups.forEach((g) => { if (g.length === 2) g.forEach((n) => beamed.add(n.i)); });
+    groups.forEach((g) => { if (g.length >= 2) g.forEach((n) => beamed.add(n.i)); });
     items.forEach((n) => {
       n.cx = left + (n.start - sys.from + n.e / 2) * eighthW;
       n.cy = y(n.pos);
     });
-    groups.forEach((g) => { if (g.length === 2) drawBeam(parts, g, step); });
+    groups.forEach((g) => { if (g.length >= 2) drawBeam(parts, g, step); });
     items.forEach((n) => {
       const open = n.kind === "w" || n.kind === "h" || n.kind === "dh";
       const hot = opt.hot === n.i ? " hot" : "";
@@ -1763,25 +1773,24 @@ function scoreSVG(notes, opt) {
       ledgers(n.pos).forEach((p) => {
         parts.push(`<line x1="${n.cx - 16}" y1="${y(p)}" x2="${n.cx + 16}" y2="${y(p)}" stroke="#241c16" stroke-width="1.5"/>`);
       });
-      const rx = (n.kind === "w" ? 1.05 : 0.9) * step;
+      const rx = (n.kind === "w" ? 1.05 : 0.92) * step;
+      const stemUp = averagePos(beamed.has(n.i) ? groups.find((g) => g.includes(n)) : [n]) < 4;
+      const sx = n.cx + (stemUp ? rx * 0.86 : -rx * 0.86);
       if (n.sharp) parts.push(`<text x="${n.cx - 22}" y="${n.cy + 6}" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#241c16">♯</text>`);
       if (n.flat) parts.push(`<text x="${n.cx - 22}" y="${n.cy + 6}" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#241c16">♭</text>`);
       parts.push(`<ellipse class="head" cx="0" cy="0" rx="${rx}" ry="${step * 0.62}"${fillAttr} transform="translate(${n.cx} ${n.cy}) rotate(-20)"/>`);
-      const up = averagePos(beamed.has(n.i) ? groups.find((g) => g.includes(n)) : [n]) < 4;
-      if (n.kind !== "w") {
-        const sx = n.cx + (up ? rx * 0.72 : -rx * 0.72);
-        if (!beamed.has(n.i)) {
-          const yEnd = n.cy + (up ? -step * 3.1 : step * 3.1);
-          parts.push(`<line x1="${sx}" y1="${n.cy}" x2="${sx}" y2="${yEnd}" stroke="#241c16" stroke-width="2"/>`);
-          if (n.kind === "e") flag(parts, sx, yEnd, up);
-        }
+      if (n.kind !== "w" && !beamed.has(n.i)) {
+        const yEnd = n.cy + (stemUp ? -step * 3.35 : step * 3.35);
+        parts.push(`<line x1="${sx}" y1="${n.cy}" x2="${sx}" y2="${yEnd}" stroke="#241c16" stroke-width="1.7"/>`);
+        if (n.kind === "e") flag(parts, sx, yEnd, stemUp);
       }
       if (n.kind === "dh" || n.kind === "dq") {
-        const dy = n.pos % 2 === 0 ? n.cy - step : n.cy;
-        parts.push(`<circle cx="${n.cx + 18}" cy="${dy}" r="3.1" fill="#241c16"/>`);
+        const onLine = n.pos % 2 === 0;
+        const dy = onLine ? n.cy - step * 0.55 : n.cy;
+        parts.push(`<circle cx="${n.cx + rx + step * 0.45}" cy="${dy}" r="${Math.max(2.4, step * 0.16)}" fill="#241c16"/>`);
       }
       if (n.orn) {
-        const ly = up ? n.cy - step * 3.7 : n.cy + step * 4.1;
+        const ly = stemUp ? n.cy - step * 3.7 : n.cy + step * 4.1;
         parts.push(`<text x="${n.cx}" y="${ly}" text-anchor="middle" font-family="Be Vietnam Pro, Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#8d3414">${ornName(n)}</text>`);
       }
       parts.push(`</g>`);
@@ -1875,14 +1884,16 @@ function drawSlur(parts, group) {
   const mid = (x1 + x2) / 2;
   parts.push(`<path class="slur" d="M ${x1} ${y} Q ${mid} ${y + bend} ${x2} ${y}"/>`);
 }
-function eighthGroups(items) {
+function eighthGroups(items, beatEighths) {
+  const beat = beatEighths || 2;
   const groups = [];
   let run = [];
-  const flush = () => {
-    for (let i = 0; i < run.length; i += 2) groups.push(run.slice(i, i + 2));
-    run = [];
-  };
-  items.forEach((it) => { if (it.kind === "e") run.push(it); else flush(); });
+  const flush = () => { if (run.length > 1) groups.push(run); run = []; };
+  items.forEach((it) => {
+    const sameBeat = run.length && Math.floor(it.start / beat) === Math.floor(run[0].start / beat) && Math.abs(it.start - (run[run.length - 1].start + run[run.length - 1].e)) < 0.01;
+    if (it.kind === "e" && (run.length === 0 || sameBeat)) run.push(it);
+    else { flush(); if (it.kind === "e") run = [it]; }
+  });
   flush();
   return groups;
 }
@@ -1890,17 +1901,20 @@ function averagePos(group) {
   return group.reduce((s, n) => s + n.pos, 0) / group.length;
 }
 function drawBeam(parts, group, step) {
+  if (group.length < 2) return;
   const up = averagePos(group) < 4;
-  const len = step * 3.1;
-  const xs = group.map((g) => g.cx + (up ? 7.4 : -7.4));
-  const y1 = group[0].cy + (up ? -len : len);
-  const y2 = group[1].cy + (up ? -len : len);
-  const thick = up ? 4.5 : -4.5;
-  parts.push(`<path d="M ${xs[0]} ${y1} L ${xs[1]} ${y2} L ${xs[1]} ${y2 + thick} L ${xs[0]} ${y1 + thick} Z" fill="#241c16"/>`);
+  const len = step * 3.35;
+  const rx = 0.92 * step;
+  const xs = group.map((g) => g.cx + (up ? rx * 0.86 : -rx * 0.86));
+  const ys = group.map((g) => g.cy + (up ? -len : len));
+  const thick = (up ? 1 : -1) * Math.max(3.4, step * 0.2);
+  const x1 = xs[0];
+  const y1 = ys[0];
+  const x2 = xs[xs.length - 1];
+  const y2 = ys[ys.length - 1];
+  parts.push(`<path d="M ${x1} ${y1} L ${x2} ${y2} L ${x2} ${y2 + thick} L ${x1} ${y1 + thick} Z" fill="#241c16"/>`);
   group.forEach((g, i) => {
-    const x = xs[i];
-    const y = y1 + (y2 - y1) * (i === 0 ? 0 : 1);
-    parts.push(`<line x1="${x}" y1="${g.cy}" x2="${x}" y2="${y}" stroke="#241c16" stroke-width="2"/>`);
+    parts.push(`<line x1="${xs[i]}" y1="${g.cy}" x2="${xs[i]}" y2="${ys[i]}" stroke="#241c16" stroke-width="1.7"/>`);
   });
 }
 function flag(parts, x, y, up) {
@@ -1963,7 +1977,8 @@ function mountScore(notes, opt) {
 function previewScore(notes, pieceId, fullSheet = false) {
   const songHints = fullSheet;
   const lane = songHints ? state.songBeat || state.songTongue : true;
-  const view = scoreSVG(notes, { lane, foot: songHints ? state.songBeat : undefined, tongue: songHints ? state.songTongue : undefined, time: true, clef: true });
+  const piece = PIECES.find((p) => p.id === pieceId);
+  const view = scoreSVG(notes, { lane, foot: songHints ? state.songBeat : undefined, tongue: songHints ? state.songTongue : undefined, time: true, clef: true, meter: piece && piece.meter });
   return `<div class="score-scroll preview ${fullSheet ? "full-sheet" : ""}" data-piece="${esc(pieceId || "")}" data-left="${view.left}" data-beatw="${view.beatW}" data-total="${view.totalBeats}">${view.html}</div>`;
 }
 function lineButtonText(btn, running) {
@@ -1972,7 +1987,8 @@ function lineButtonText(btn, running) {
 }
 function linePracticeBar(notes, pieceId) {
   const laid = layout(notes);
-  const systems = splitSystems(laid.items, laid.totalE);
+  const piece = PIECES.find((p) => p.id === pieceId);
+  const systems = splitSystems(laid.items, laid.totalE, eighthsPerBar(piece && piece.meter));
   const all = systems.length > 1
     ? `<button type="button" class="btn primary" data-act="practice-line" data-id="${esc(pieceId)}" data-from="0" data-to="${laid.totalE}" data-line="all" data-count="${notes.length}">Tập ${notes.length} nốt</button>`
     : "";
@@ -2383,7 +2399,7 @@ function paintSongSheets() {
 
 function pieceGroups() {
   return [
-    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "Sheet có nốt móc, nốt đen và nốt trắng. Đầu rỗng là nốt dài hơn. Bấm Chạy theo tiếng phách hoặc Tập dòng." },
+    { id: "songs", title: "Bài hát", ids: SONG_LIBRARY.map((piece) => piece.id), note: "Dân ca viết nhịp 2/4, mỗi nốt một phách. Bài Tây giữ đúng nhịp gốc: nốt trắng đầu rỗng, nốt móc có đuôi cong, vạch đứng là hết ô." },
     { id: "study", title: "15 bài tập sáo trúc", ids: STUDY_LIBRARY.map((piece) => piece.id), note: "Đi từ nốt tròn, nốt trắng, nốt đen, nốt móc, rồi nốt chấm. Đầu nốt rỗng là nốt dài. Đuôi cong là nốt móc. Dấu chấm làm nốt dài thêm một nửa." },
     { id: "dotted", title: "Nốt chấm", ids: ["dencham", "cham"], note: "Dấu chấm bên phải làm nốt dài thêm một nửa giá trị ban đầu: nốt đen chấm = 1½ phách, nốt trắng chấm = 3 phách. Chân vẫn đập đều từng phách; nhấc ở giữa mỗi phách, kể cả khi đang giữ nốt." },
     { id: "sao", title: "Bài sáo", ids: ["rucon", "lysao", "lyngua"], note: "Câu dân ca viết chậm trên thang Đồ cho sáo C5. Bấm Tập dòng để thổi từng dòng. Nút Nghe nghe cả bài. Nghe mẫu và Nghe lại bạn hiện sau khi thổi xong." },
@@ -3528,7 +3544,7 @@ function paintSongFocus() {
   state.focusSong = piece.id;
   const columns = window.innerWidth > 800 ? 2 : 1;
   const maxW = Math.max(320, Math.min(1800, (window.innerWidth - (columns === 2 ? 48 : 28)) / columns));
-  const score = scoreSVG(resolve(piece.seq), { lane: state.songBeat || state.songTongue, foot: state.songBeat, tongue: state.songTongue, time: true, clef: true, compact: true, fullSheet: true, maxW });
+  const score = scoreSVG(resolve(piece.seq), { lane: state.songBeat || state.songTongue, foot: state.songBeat, tongue: state.songTongue, time: true, clef: true, compact: true, fullSheet: true, maxW, meter: piece.meter });
   return `<section class="song-focus" aria-label="Sheet nhạc toàn màn hình">
     <header class="song-focus-head"><div><h2>${esc(piece.title)}</h2><p>${esc(piece.text)}</p></div><button type="button" class="song-focus-close" data-act="close-song-focus" aria-label="Đóng sheet, về trang chủ">×</button></header>
     <div class="song-focus-tools"><button class="btn" id="focusPlayBtn" type="button" data-act="play-song-focus">▶ Chạy sheet</button><label>Nhịp <output id="focusBpmVal">${state.bpm}</output> BPM<input id="focusBpm" type="range" min="52" max="120" step="2" value="${state.bpm}"></label><label><input type="checkbox" id="focusVoice" ${state.voice ? "checked" : ""}> Nghe tiếng nốt</label><label><input type="checkbox" id="songShowFoot" ${state.songBeat ? "checked" : ""}> Đập chân</label><label><input type="checkbox" id="songShowTongue" ${state.songTongue ? "checked" : ""}> Đánh lưỡi/luyến</label></div>
