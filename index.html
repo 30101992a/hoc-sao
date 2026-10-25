@@ -743,6 +743,17 @@
   .tabs button { white-space:nowrap; }
   @media(max-width:700px) { .timing-grid { grid-template-columns:repeat(4,minmax(44px,1fr)); } }
 
+  .collected-sheets { overflow:auto; min-height:0; padding:4px 0 24px; }
+  .collected-sheets > .card { margin:12px 0; }
+  .collected-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:12px; }
+  .collected-card h3 { margin:0 0 6px; }
+  .collected-card .sheet-meta { color:var(--accent-ink); }
+  .collected-audio { display:block; width:100%; margin:8px 0; }
+  .collected-card a.btn { display:inline-flex; align-items:center; text-decoration:none; }
+  .collected-sheets button,.collected-sheets a.btn,.collected-sheets select { min-height:44px; }
+  .collected-card { min-width:0; }
+  .sheet-view-buttons { flex:none; }
+  .collected-sheets summary { min-height:44px; cursor:pointer; color:var(--accent-ink); }
 </style>
 </head>
 <body>
@@ -1122,6 +1133,8 @@ const PATTERNS = {
 const saved = load();
 const state = {
   tab: ["notes", "timing", "rhythm", "sheet", "practice", "breath", "beat"].includes(saved.tab) ? saved.tab : "notes",
+  sheetView: saved.sheetView === "interactive" ? "interactive" : "collected",
+  sheetFilter: "all",
   focusSong: "",
   beat: { fileName: "", bpm: 0, key: "", keyIdx: 0, duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
   songBeat: true,
@@ -1190,7 +1203,7 @@ function load() {
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      tab: state.tab, practice: state.practice, timingResume: { lesson: timing.lesson, pattern: timing.pattern, position: timing.position },
+      tab: state.tab, sheetView: state.sheetView, practice: state.practice, timingResume: { lesson: timing.lesson, pattern: timing.pattern, position: timing.position },
       bpm: state.bpm, scoreNotes: state.voice, metro: state.metro, hint: state.hint,
       extras: state.extras, noteReg: state.noteReg, level: state.level, selected: state.selected, stats: state.stats
     }));
@@ -2403,6 +2416,170 @@ function paintRhythm() {
   return `<div class="sheet ${pane === "bai" && state.shelf === "songs" ? "songs-mode" : ""}"><div class="piece-tabs pane-tabs">${paneTabs}</div>${body}</div>`;
 }
 
+const COLLECTED_SHEETS = [
+  {
+    "id": 404,
+    "source": "https://www.flutetunes.com/tunes.php?id=404",
+    "pdf": "https://www.flutetunes.com/tunes/hot-cross-buns.pdf",
+    "audio": "https://www.flutetunes.com/tunes/hot-cross-buns.mp3",
+    "title": "Hot Cross Buns",
+    "key": "Đô trưởng",
+    "meter": "4/4",
+    "range": "G4–G5",
+    "stage": "Bắt đầu",
+    "tip": "Đếm đủ 4 phách mỗi ô, giữ nốt dài đến hết giá trị; đọc theo đúng bản PDF, không đoán theo trí nhớ.",
+    "instrument": "Sáo độc tấu"
+  },
+  {
+    "id": 37,
+    "source": "https://www.flutetunes.com/tunes.php?id=37",
+    "pdf": "https://www.flutetunes.com/tunes/au-clair-de-la-lune.pdf",
+    "audio": "https://www.flutetunes.com/tunes/au-clair-de-la-lune.mp3",
+    "title": "Au clair de la lune",
+    "key": "La trưởng",
+    "meter": "4/4",
+    "range": "A4–C#5",
+    "stage": "Bắt đầu",
+    "tip": "Luyện nhịp đều với ít cao độ. Bản này ở La trưởng: chú ý Đô thăng; nếu đổi sang Đô trưởng phải chuyển toàn bộ giai điệu.",
+    "instrument": "Sáo và piano"
+  },
+  {
+    "id": 18,
+    "source": "https://www.flutetunes.com/tunes.php?id=18",
+    "pdf": "https://www.flutetunes.com/tunes/twinkle-twinkle-little-star.pdf",
+    "audio": "https://www.flutetunes.com/tunes/twinkle-twinkle-little-star.mp3",
+    "title": "Twinkle Twinkle Little Star",
+    "key": "Đô trưởng",
+    "meter": "4/4",
+    "range": "C5–A5",
+    "stage": "Bắt đầu",
+    "tip": "Luyện nhảy quãng và giữ nốt dài ở cuối câu. Bản này viết ở Đô trưởng.",
+    "instrument": "Sáo và piano"
+  },
+  {
+    "id": 162,
+    "source": "https://www.flutetunes.com/tunes.php?id=162",
+    "pdf": "https://www.flutetunes.com/tunes/frere-jacques.pdf",
+    "audio": "https://www.flutetunes.com/tunes/frere-jacques.mp3",
+    "title": "Frère Jacques",
+    "key": "Đô trưởng",
+    "meter": "2/2",
+    "range": "G4–A5",
+    "stage": "Tiếp theo",
+    "tip": "Bản này ghi 2/2: hai phách trắng mỗi ô. Đọc kỹ trường độ; không mặc định giống bản 4/4 trong tủ bài tập.",
+    "instrument": "Sáo độc tấu"
+  },
+  {
+    "id": 74,
+    "source": "https://www.flutetunes.com/tunes.php?id=74",
+    "pdf": "https://www.flutetunes.com/tunes/beethoven-ode-to-joy.pdf",
+    "audio": "https://www.flutetunes.com/tunes/beethoven-ode-to-joy.mp3",
+    "title": "Ode to Joy · Khải hoàn ca",
+    "key": "Rê trưởng",
+    "meter": "2/2",
+    "range": "A4–A5",
+    "stage": "Tiếp theo",
+    "tip": "Luyện phách lớn trong 2/2. Bản Rê trưởng có Fa thăng và Đô thăng; tập chậm trước khi nghe theo tốc độ nguồn.",
+    "instrument": "Sáo độc tấu"
+  },
+  {
+    "id": 7,
+    "source": "https://www.flutetunes.com/tunes.php?id=7",
+    "pdf": "https://www.flutetunes.com/tunes/amazing-grace.pdf",
+    "audio": "https://www.flutetunes.com/tunes/amazing-grace.mp3",
+    "title": "Amazing Grace",
+    "key": "Đô trưởng",
+    "meter": "3/4",
+    "range": "G4–G5",
+    "stage": "Tiếp theo",
+    "tip": "Đếm 1–2–3, phân biệt phách mạnh đầu ô. Kiểm tra ô lấy đà và ngân đủ trường độ theo PDF.",
+    "instrument": "Sáo và piano"
+  },
+  {
+    "id": 21,
+    "source": "https://www.flutetunes.com/tunes.php?id=21",
+    "pdf": "https://www.flutetunes.com/tunes/scarborough-fair.pdf",
+    "audio": "https://www.flutetunes.com/tunes/scarborough-fair.mp3",
+    "title": "Scarborough Fair",
+    "key": "Mi thứ",
+    "meter": "3/4",
+    "range": "D4–E5",
+    "stage": "Tiếp theo",
+    "tip": "Luyện câu dài trong 3/4. Bản Mi thứ có Fa thăng ở hóa biểu; chú ý thêm dấu hóa bất thường nếu xuất hiện.",
+    "instrument": "Sáo độc tấu"
+  },
+  {
+    "id": 1,
+    "source": "https://www.flutetunes.com/tunes.php?id=1",
+    "pdf": "https://www.flutetunes.com/tunes/greensleeves.pdf",
+    "audio": "https://www.flutetunes.com/tunes/greensleeves.mp3",
+    "title": "Greensleeves",
+    "key": "La thứ",
+    "meter": "3/4",
+    "range": "E4–G5",
+    "stage": "Tiếp theo",
+    "tip": "Tập chậm từng câu trong 3/4, đọc kỹ nốt chấm và dấu hóa bất thường. Đừng vào nốt theo lời hát quen thuộc.",
+    "instrument": "Sáo, kèm hợp âm guitar"
+  },
+  {
+    "id": 240,
+    "source": "https://www.flutetunes.com/tunes.php?id=240",
+    "pdf": "https://www.flutetunes.com/tunes/auld-lang-syne.pdf",
+    "audio": "https://www.flutetunes.com/tunes/auld-lang-syne.mp3",
+    "title": "Auld Lang Syne",
+    "key": "Sol trưởng",
+    "meter": "4/4",
+    "range": "D4–G5",
+    "stage": "Tiếp theo",
+    "tip": "Luyện lấy đà và nốt chấm theo bản PDF. Bản Sol trưởng có Fa thăng.",
+    "instrument": "Sáo và piano"
+  },
+  {
+    "id": 438,
+    "source": "https://www.flutetunes.com/tunes.php?id=438",
+    "pdf": "https://www.flutetunes.com/tunes/the-irish-washerwoman.pdf",
+    "audio": "https://www.flutetunes.com/tunes/the-irish-washerwoman.mp3",
+    "title": "The Irish Washerwoman",
+    "key": "Sol trưởng",
+    "meter": "6/8",
+    "range": "D4–B5",
+    "stage": "Thử thách",
+    "tip": "Nhóm 6 móc đơn thành 2 phách lớn: 1-la-li, 2-la-li. Chạy ngón chậm và làm đúng dấu nhắc lại trước khi tăng tốc.",
+    "instrument": "Sáo độc tấu"
+  }
+];
+
+function sheetViewButtons() {
+  return `<div class="row sheet-view-buttons"><button class="btn ${state.sheetView === 'collected' ? 'primary' : ''}" data-act="sheet-view" data-view="collected">Sheet sưu tầm · ${COLLECTED_SHEETS.length}</button><button class="btn ${state.sheetView !== 'collected' ? 'primary' : ''}" data-act="sheet-view" data-view="interactive">Bài tập tương tác</button></div>`;
+}
+function sheetProgress() {
+  try { const x=JSON.parse(localStorage.getItem('hoc-sao-sheet-progress-v1'));return x && typeof x === 'object' && !Array.isArray(x) ? x : {}; } catch (_) { return {}; }
+}
+function paintCollectedSheets() {
+  const progress=sheetProgress();
+  const list=COLLECTED_SHEETS.filter(x=>state.sheetFilter==='all'||x.stage===state.sheetFilter);
+  return `<section class="collected-sheets">
+    ${sheetViewButtons()}
+    <div class="card"><h2>Sheet sưu tầm</h2><p>10 bản PDF có nguồn và âm thanh mẫu. Chọn nhóm rồi mở bài để tập.</p><details><summary>Cách tập và thông tin bản nhạc</summary><p>Giữ nguyên tông, nhịp và ký hiệu của flutetunes.com; chưa chuyển tông theo cây sáo. Với bản có piano, đọc dòng sáo ở phía trên.</p>
+    <p>Mở PDF → xem hóa biểu và số chỉ nhịp → gõ tiết tấu → thổi từng câu chậm. Các PDF mở ở tab mới để phóng to hoặc lưu trên điện thoại. Chức năng chấm mic và chạy con trỏ nằm trong mục Bài tập tương tác.</p></details>
+    <div class="row">${['all','Bắt đầu','Tiếp theo','Thử thách'].map(k=>`<button class="btn ${state.sheetFilter===k?'primary':''}" data-act="sheet-filter" data-filter="${k}">${k==='all'?'Tất cả':k}</button>`).join('')}</div>
+    <p class="foot-note">Thứ tự nhóm là gợi ý luyện trên sáo trúc. Ký hiệu cao độ C4, C5… và tông ghi theo bản nguồn; các bản tập trong web có thể dùng quãng khác.</p></div>
+    <div class="collected-grid">${list.map(x=>`<article class="card collected-card">
+      <h3>${esc(x.title)}</h3><p class="sheet-meta">${esc(x.stage)} · ${esc(x.meter)} · ${esc(x.key)} · ${esc(x.range)}</p><p>${esc(x.instrument)}</p>
+      <p>${esc(x.tip)}</p>
+      <div class="row"><a class="btn primary" href="${x.pdf}" target="_blank" rel="noopener noreferrer">Mở PDF</a><a class="btn" href="${x.source}" target="_blank" rel="noopener noreferrer">Nguồn & MIDI</a></div>
+      <label for="sheet-audio-${x.id}">Nghe mẫu theo bản nguồn</label>
+      <audio id="sheet-audio-${x.id}" class="collected-audio" controls preload="none" src="${x.audio}"></audio>
+      <div class="row"><label>Tốc độ nghe <select data-sheet-speed="${x.id}" aria-label="Tốc độ nghe ${esc(x.title)}"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option></select></label><a href="${x.audio}" target="_blank" rel="noopener noreferrer">Mở âm thanh riêng</a></div>
+      <label>Tiến độ <select data-sheet-progress="${x.id}" aria-label="Tiến độ ${esc(x.title)}">${[['new','Chưa tập'],['learning','Đang tập'],['done','Đã tập']].map(([v,t])=>`<option value="${v}" ${(progress[x.id]||'new')===v?'selected':''}>${t}</option>`).join('')}</select></label>
+    </article>`).join('')}</div>
+    <p class="foot-note">PDF và âm thanh do flutetunes.com cung cấp. Liên kết giữ nguyên bản biên soạn của nguồn; tiến độ chỉ lưu trên trình duyệt này. Kiểm tra liên kết ngày 25/10/2026.</p>
+  </section>`;
+}
+document.addEventListener('play', (e)=>{
+  if(e.target.matches?.('.collected-audio')) document.querySelectorAll('.collected-audio').forEach(a=>{if(a!==e.target)a.pause();});
+}, true);
+
 function sheetCatalog() {
   const byId = (id) => PIECES.find((p) => p.id === id);
   return [
@@ -2412,6 +2589,7 @@ function sheetCatalog() {
   ];
 }
 function paintSongSheets() {
+  if (state.sheetView === "collected") return paintCollectedSheets();
   const groups = sheetCatalog();
   const all = groups.flatMap((g) => g.pieces);
   const piece = all.find((song) => song.id === state.shelfPiece) || all[0];
@@ -2423,7 +2601,8 @@ function paintSongSheets() {
   const groupTabs = groups.map((g) => `<button type="button" class="btn ${g.id === group.id ? "on" : ""}" data-act="sheet-group" data-group="${g.id}">${esc(g.title)} · ${g.pieces.length}</button>`).join("");
   const songTabs = group.pieces.map((song) => `<button type="button" class="btn ${song.id === piece.id ? "on" : ""}" data-act="shelf-piece" data-id="${song.id}" title="${esc(song.title)}">${esc(song.title)}</button>`).join("");
   return `<div class="sheet song-library">
-    <div class="piece-tabs pane-tabs"><strong>Tủ sheet · ${all.length} bản</strong><span>Dân ca, bài luyện nốt và bài sáo ngắn. Chọn nhóm, rồi chọn bài.</span></div>
+    ${sheetViewButtons()}
+    <div class="piece-tabs pane-tabs"><strong>Tủ sheet · ${all.length} bản</strong><span>Bản tập tương tác, có bài rút gọn hoặc chuyển quãng. Để đối chiếu bản có nguồn, mở Sheet sưu tầm.</span></div>
     <div class="sheet-rest songs-mode">
       <div class="piece-tabs">${groupTabs}</div>
       <div class="piece-tabs nums song-picker" aria-label="Chọn bài">${songTabs}</div>
@@ -4531,6 +4710,8 @@ async function startPairListen() {
 }
 
 const actions = {
+  "sheet-view"(el) { state.sheetView = el.dataset.view === "collected" ? "collected" : "interactive"; save(); go(); },
+  "sheet-filter"(el) { state.sheetFilter = el.dataset.filter; go(); },
   "timing-lesson"(el) { timing.lesson = Number(el.dataset.i); timing.pattern = TIMING_LESSONS[timing.lesson][5]; timing.answer = null; timing.position = 0; save(); paint(); },
   "timing-pattern"(el) { timing.pattern = Number(el.dataset.i); save(); paint(); },
   "timing-answer"(el) { timing.answer = Number(el.dataset.i); paint(); },
@@ -5016,6 +5197,14 @@ function onKey(e) {
   }
 }
 function onChange(e) {
+  if (e.target.dataset.sheetSpeed) {
+    const player = document.getElementById("sheet-audio-" + e.target.dataset.sheetSpeed);
+    if (player) { player.playbackRate = Number(e.target.value); player.preservesPitch = true; }
+  }
+  if (e.target.dataset.sheetProgress) {
+    const progress = sheetProgress(); progress[e.target.dataset.sheetProgress] = e.target.value;
+    try { localStorage.setItem("hoc-sao-sheet-progress-v1", JSON.stringify(progress)); } catch (_) {}
+  }
   if (e.target.id === "beatFile" && e.target.files?.[0]) loadBeatFile(e.target.files[0]);
   if (e.target.id === "youtubeUrl") { state.beat.url = e.target.value.trim(); go(); }
   if (e.target.id === "beatTranspose") state.beat.semitones = Number(e.target.value) || 0;
