@@ -515,7 +515,8 @@
     .switches label { font-size: 13px; }
     .dock {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(44px, 1fr));
+      overflow-x: auto;
       position: fixed;
       left: 0; right: 0; bottom: 0;
       z-index: 20;
@@ -726,6 +727,7 @@
   }
 
   .timing-page { overflow: auto; min-height: 0; padding: 4px 0 24px; }
+  .timing-page button { min-width:44px; min-height:44px; }
   .timing-page .card { margin-bottom: 12px; }
   .timing-lessons { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
   .timing-grid { display:grid; grid-template-columns: repeat(8,minmax(44px,1fr)); gap:5px; margin:14px 0; overflow-x:auto; }
@@ -1119,7 +1121,7 @@ const PATTERNS = {
 
 const saved = load();
 const state = {
-  tab: "notes",
+  tab: ["notes", "timing", "rhythm", "sheet", "practice", "breath", "beat"].includes(saved.tab) ? saved.tab : "notes",
   focusSong: "",
   beat: { fileName: "", bpm: 0, key: "", keyIdx: 0, duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
   songBeat: true,
@@ -1188,6 +1190,7 @@ function load() {
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
+      tab: state.tab, timingResume: { lesson: timing.lesson, pattern: timing.pattern, position: timing.position },
       bpm: state.bpm, scoreNotes: state.voice, metro: state.metro, hint: state.hint,
       extras: state.extras, noteReg: state.noteReg, level: state.level, selected: state.selected, stats: state.stats
     }));
@@ -3603,6 +3606,13 @@ function paint() {
     syncBreathAudio();
   }
   else app.innerHTML = paintPractice();
+  const timingPage = document.querySelector(".timing-page");
+  if (timingPage) {
+    requestAnimationFrame(() => {
+      timingPage.scrollTop = timing.position;
+      timingPage.addEventListener("scroll", () => { timing.position = timingPage.scrollTop; save(); }, { passive: true });
+    });
+  }
   const beatPlayer = document.getElementById("beatPlayer");
   if (beatPlayer && state.beat.audioUrl) beatPlayer.src = state.beat.audioUrl;
   document.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === state.tab));
@@ -4506,8 +4516,8 @@ async function startPairListen() {
 }
 
 const actions = {
-  "timing-lesson"(el) { timing.lesson = Number(el.dataset.i); timing.pattern = TIMING_LESSONS[timing.lesson][5]; timing.answer = null; paint(); },
-  "timing-pattern"(el) { timing.pattern = Number(el.dataset.i); paint(); },
+  "timing-lesson"(el) { timing.lesson = Number(el.dataset.i); timing.pattern = TIMING_LESSONS[timing.lesson][5]; timing.answer = null; timing.position = 0; save(); paint(); },
+  "timing-pattern"(el) { timing.pattern = Number(el.dataset.i); save(); paint(); },
   "timing-answer"(el) { timing.answer = Number(el.dataset.i); paint(); },
   "timing-demo"() { startTiming(true); },
   "timing-start"() { startTiming(false); },
@@ -4523,6 +4533,7 @@ const actions = {
   tab(el) {
     if (state.focusSong) return;
     state.tab = el.dataset.tab;
+    save();
     if (state.tab !== "practice") state.quiz = null;
     go();
   },
@@ -5102,7 +5113,11 @@ const TIMING_PATTERNS = [
   { name: "4 · Đen chấm", cells: [1,0,0,1,1,0,0,1], hint: "Đen chấm–móc đơn, lặp lại. Gõ ở 1, ‘và’ của 2, 3, ‘và’ của 4." },
   { name: "5 · Đảo phách", cells: [-1,1,0,1,0,1,0,1], hint: "Lặng đơn, móc–đen nối, các nốt vào ở phần ‘và’. Giữ chân ở số." }
 ];
-const timing = { lesson: 0, pattern: 0, answer: null, run: null, raf: 0, nodes: [], token: 0 };
+const timing = {
+  lesson: Number.isInteger(saved.timingResume?.lesson) && saved.timingResume.lesson >= 0 && saved.timingResume.lesson < TIMING_LESSONS.length ? saved.timingResume.lesson : 0,
+  pattern: Number.isInteger(saved.timingResume?.pattern) && saved.timingResume.pattern >= 0 && saved.timingResume.pattern < TIMING_PATTERNS.length ? saved.timingResume.pattern : 0,
+  position: Number.isFinite(saved.timingResume?.position) ? Math.max(0, saved.timingResume.position) : 0,
+  answer: null, run: null, raf: 0, nodes: [], token: 0 };
 function timingHistory() {
   try { const a = JSON.parse(localStorage.getItem("hoc-sao-timing-v1")); return Array.isArray(a) ? a.slice(-20) : []; } catch (_) { return []; }
 }
