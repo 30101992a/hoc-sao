@@ -1126,7 +1126,7 @@ const state = {
   beat: { fileName: "", bpm: 0, key: "", keyIdx: 0, duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
   songBeat: true,
   songTongue: true,
-  practice: "name",
+  practice: ["name", "mixed", "method", "value", "read", "tap", "doi"].includes(saved.practice) ? saved.practice : "name",
   level: saved.level || 1,
   extras: !!saved.extras,
   noteReg: saved.noteReg || 1,
@@ -1190,7 +1190,7 @@ function load() {
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      tab: state.tab, timingResume: { lesson: timing.lesson, pattern: timing.pattern, position: timing.position },
+      tab: state.tab, practice: state.practice, timingResume: { lesson: timing.lesson, pattern: timing.pattern, position: timing.position },
       bpm: state.bpm, scoreNotes: state.voice, metro: state.metro, hint: state.hint,
       extras: state.extras, noteReg: state.noteReg, level: state.level, selected: state.selected, stats: state.stats
     }));
@@ -1722,7 +1722,7 @@ function scoreSVG(notes, opt) {
   const meter = opt.meter || [4, 4];
   const perBar = eighthsPerBar(meter);
   const step = opt.zoom ? 22 : opt.compact ? 12 : 18;
-  const gY = opt.zoom ? Math.round(22 * 177 / 18) : opt.compact ? 108 : 177;
+  const gY = opt.zoom ? Math.max(Math.round(22 * 177 / 18), 40 + (Math.max(...notes.map((n) => n.pos)) - 2) * step) : opt.compact ? 108 : 177;
   const yPos = (pos) => gY - (pos - 2) * step;
   const bottomLine = yPos(0);
   const showLane = !!opt.lane || !!opt.foot || !!opt.tongue;
@@ -2465,7 +2465,21 @@ function makeQuiz() {
   const scale = state.practice === "name" ? focusNotes() : activeNotes();
   const level = state.level;
   const items = [];
-  if (state.practice === "name") {
+  if (state.practice === "mixed") {
+    // Hai lượt xáo không lặp trong mỗi lượt; 30 câu luôn có đủ cả 19 nốt.
+    const pool = NOTES;
+    const deck = [...shuffle(pool), ...shuffle(pool)].slice(0, 30);
+    deck.forEach((note) => {
+      const sameName = pool.filter((n) => n.id !== note.id && n.midi % 12 === note.midi % 12);
+      const others = shuffle(pool.filter((n) => n.id !== note.id && n.midi % 12 !== note.midi % 12));
+      const options = [note, ...sameName, ...others].slice(0, 4);
+      const label = (n) => `${n.name.replace(/ [23]$/, "")} · quãng ${noteRegOf(n)}`;
+      items.push({ notes: [{ ...note, e: 2 }], prompt: "Nốt gì, thuộc quãng nào?",
+        answer: note.id, choices: shuffle(options.map((n) => ({ id: n.id, label: label(n) }))),
+        explain: `Đáp án: ${label(note)}. ${PLACE[note.id]?.[0] || ""}.`,
+        noteId: note.id, hear: note.midi });
+    });
+  } else if (state.practice === "name") {
     const pool = scale;
     const choices = shuffle(pool.map((n) => ({ id: n.id, label: n.name })));
     for (let i = 0; i < 30; i++) {
@@ -2564,6 +2578,7 @@ function paintPractice() {
   const modes = [
     ["method", "Cách luyện"],
     ["name", "Nhận diện nốt"],
+    ["mixed", "Trộn quãng 1–2–3"],
     ["value", "Nhận phách"],
     ["read", "Đọc ô nhịp"],
     ["tap", "Đập chân"],
@@ -2577,8 +2592,8 @@ function paintPractice() {
     if (!state.quiz || state.quiz.mode !== state.practice || state.quiz.level !== state.level || state.quiz.reg !== state.noteReg) state.quiz = makeQuiz();
     body = paintQuestion();
   }
-  const levelRow = state.practice === "tap" || state.practice === "doi" || state.practice === "method" ? "" : `<div class="seg">${levels}</div>`;
-  const regRow = state.practice === "name" ? noteRegButtons() : "";
+  const levelRow = state.practice === "tap" || state.practice === "doi" || state.practice === "method" || state.practice === "mixed" ? "" : `<div class="seg">${levels}</div>`;
+  const regRow = state.practice === "name" ? noteRegButtons() : state.practice === "mixed" ? `<p>30 câu trộn quãng 1, 2, 3 · Đồ 1–Son 3 theo bộ nốt hiện có. Chọn đúng cả tên và quãng; không cần bật “Hiện cao độ 2 và 3”.</p>` : "";
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
   return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
 }
@@ -2632,7 +2647,7 @@ function paintQuestion() {
     const good = q.good || 0;
     return `<div class="card">
       <p class="sum">${good}/${total} câu đúng</p>
-      <p>${good >= 7 ? "Chỗ này bạn đọc khá chắc." : good >= 4 ? "Đã vào nhịp. Những câu sai vừa rồi đáng xem lại trên khuông." : "Cứ nghe chậm và nhìn dòng, khe một lần nữa rồi làm lại."}</p>
+      <p>${good / total >= 0.8 ? "Chỗ này bạn đọc khá chắc." : good / total >= 0.5 ? "Đã vào nhịp. Những câu sai vừa rồi đáng xem lại trên khuông." : "Cứ nghe chậm và nhìn dòng, khe một lần nữa rồi làm lại."}</p>
       <div class="row"><button type="button" class="btn primary" data-act="new-quiz">Làm bộ mới</button></div>
     </div>`;
   }
@@ -2640,7 +2655,7 @@ function paintQuestion() {
   const choices = item.choices.map((c) => `<button type="button" data-act="answer" data-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("");
   return `<div class="card">
     <p class="progress">${state.practice === "name" ? "Nốt" : "Câu"} ${q.index + 1}/${q.items.length} · cả buổi: đúng ${state.stats.ok}, sai ${state.stats.bad}</p>
-    ${mountScore(item.notes, { lane: false, hot: item.hot, zoom: state.practice === "name", time: layout(item.notes).totalE % 8 === 0 && layout(item.notes).totalE >= 8 })}
+    ${mountScore(item.notes, { lane: false, hot: item.hot, zoom: state.practice === "name" || state.practice === "mixed", time: layout(item.notes).totalE % 8 === 0 && layout(item.notes).totalE >= 8 })}
     <p><strong>${esc(item.prompt)}</strong></p>
     <div class="choices" id="choices">${choices}</div>
     <p class="feedback" id="feedback"></p>
@@ -4824,6 +4839,7 @@ const actions = {
   },
   practice(el) {
     state.practice = el.dataset.mode;
+    save();
     state.quiz = null;
     go();
   },
