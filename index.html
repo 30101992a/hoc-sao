@@ -107,7 +107,7 @@
   .sheet-rest .piece p { margin: 0; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
   .sheet .demo-card .score-scroll svg { width: auto; height: auto; max-width: none; }
   .sheet .demo-card > p { display: none; }
-  .sheet .rgrid { margin-top: 0; gap: 6px; grid-template-columns: repeat(6, minmax(0, 1fr)); min-width: 0; }
+  .sheet .rgrid { margin-top: 0; gap: 6px; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 0; }
   .sheet .rcard { min-width: 0; padding: 6px 8px; }
   .sheet .rcard strong, .sheet .rcard em { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sheet-rest { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
@@ -515,7 +515,7 @@
     .switches label { font-size: 13px; }
     .dock {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       position: fixed;
       left: 0; right: 0; bottom: 0;
       z-index: 20;
@@ -724,6 +724,23 @@
     max-height: 240px;
     overflow: hidden;
   }
+
+  .timing-page { overflow: auto; min-height: 0; padding: 4px 0 24px; }
+  .timing-page .card { margin-bottom: 12px; }
+  .timing-lessons { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+  .timing-grid { display:grid; grid-template-columns: repeat(8,minmax(44px,1fr)); gap:5px; margin:14px 0; overflow-x:auto; }
+  .timing-cell { text-align:center; padding:10px 3px; border:1px solid var(--line); border-radius:8px; }
+  .timing-cell strong { display:block; font-size:24px; }
+  .timing-cell.rest { color:var(--soft); background:var(--bg); }
+  .timing-cell.active { outline:2px solid var(--accent); background:var(--raise); }
+  #timingPad { width:100%; min-height:100px; font-size:22px; touch-action:manipulation; margin:10px 0; }
+  .timing-results { overflow-x:auto; }
+  .timing-results table { width:100%; border-collapse:collapse; }
+  .timing-results td,.timing-results th { text-align:left; padding:7px; border-bottom:1px solid var(--line); }
+  .tabs { overflow-x:auto; }
+  .tabs button { white-space:nowrap; }
+  @media(max-width:700px) { .timing-grid { grid-template-columns:repeat(4,minmax(44px,1fr)); } }
+
 </style>
 </head>
 <body>
@@ -732,6 +749,7 @@
     <h1>Học sáo</h1>
     <nav class="tabs" aria-label="Phần học">
       <button type="button" data-act="tab" data-tab="notes" class="on">Nốt trên khuông</button>
+      <button type="button" data-act="tab" data-tab="timing">Nhịp & nhạc lý</button>
       <button type="button" data-act="tab" data-tab="rhythm">Đập và nhấc</button>
       <button type="button" data-act="tab" data-tab="sheet">Tập thổi sheet</button>
       <button type="button" data-act="tab" data-tab="practice">Luyện tập</button>
@@ -755,6 +773,7 @@
 <div id="toast" class="toast" role="status"></div>
 <nav class="dock" aria-label="Phần học">
   <button type="button" data-act="tab" data-tab="notes" class="on">Nốt</button>
+  <button type="button" data-act="tab" data-tab="timing">Nhịp/lý</button>
   <button type="button" data-act="tab" data-tab="rhythm">Đập</button>
   <button type="button" data-act="tab" data-tab="sheet">Sheet</button>
   <button type="button" data-act="tab" data-tab="practice">Luyện</button>
@@ -3552,6 +3571,7 @@ async function startFingerListen() {
   fingerListen.raf = requestAnimationFrame(frame);
 }
 function paint() {
+  stopTiming();
   stopLineListen();
   stopPairListen();
   engine.stop();
@@ -3565,6 +3585,7 @@ function paint() {
   } else stopQuizListen();
   const app = document.getElementById("app");
   if (state.focusSong) app.innerHTML = paintSongFocus();
+  else if (state.tab === "timing") app.innerHTML = paintTiming();
   else if (state.tab === "notes") app.innerHTML = paintNotes();
   else if (state.tab === "rhythm") app.innerHTML = paintRhythm();
   else if (state.tab === "sheet") app.innerHTML = paintSongSheets();
@@ -4485,6 +4506,12 @@ async function startPairListen() {
 }
 
 const actions = {
+  "timing-lesson"(el) { timing.lesson = Number(el.dataset.i); timing.pattern = TIMING_LESSONS[timing.lesson][5]; timing.answer = null; paint(); },
+  "timing-pattern"(el) { timing.pattern = Number(el.dataset.i); paint(); },
+  "timing-answer"(el) { timing.answer = Number(el.dataset.i); paint(); },
+  "timing-demo"() { startTiming(true); },
+  "timing-start"() { startTiming(false); },
+  "timing-stop"() { stopTiming(); const el = document.getElementById("timingLive"); if (el) el.textContent = "Đã dừng. Bấm Tập gõ để bắt đầu lại."; },
   "open-study"() {
     state.tab = "rhythm";
     state.rhythmPane = "bai";
@@ -4900,6 +4927,7 @@ function onClick(e) {
   if (fn) fn(el, e);
 }
 function onPointer(e) {
+  if (e.target.closest("#timingPad") && e.button <= 0) { e.preventDefault(); timingTap(); return; }
   const pad = e.target.closest("[data-tap]");
   if (!pad || e.button > 0) return;
   e.preventDefault();
@@ -4938,6 +4966,11 @@ function onInput(e) {
   if (e.target.id === "breathDevice" && !micHold.muteSelect && e.target.value !== micHold.deviceId) startBreathListen(e.target.value);
 }
 function onKey(e) {
+  if (state.tab === "timing" && e.code === "Space" && (!e.target.matches("input, textarea, select, button") || e.target.id === "timingPad")) {
+    e.preventDefault();
+    if (!e.repeat) timingTap();
+    return;
+  }
   if (e.target.matches("input, textarea")) return;
   if (e.repeat) return;
   if (state.tab === "notes" && e.key >= "1" && e.key <= "8") {
@@ -5048,6 +5081,128 @@ function audit() {
     if (sum !== 8) console.error("pattern", pat, sum);
   });
 }
+
+
+// Luyện thời điểm vào nốt độc lập với cao độ. Dùng đồng hồ âm thanh cho cả nghe và gõ.
+const TIMING_LESSONS = [
+  ["Phách và ô nhịp", "Phách là nhịp đập đều. Ô nhịp gom các phách theo số chỉ nhịp. Trong 2/4 có 2 phách đen mỗi ô (MẠNH–nhẹ); 3/4 có 3 (MẠNH–nhẹ–nhẹ); 4/4 có 4, phách 1 mạnh nhất, phách 3 mạnh vừa. Tốc độ 60 BPM ở đây nghĩa là 60 phách đen mỗi phút.", "Một ô nhịp 3/4 có bao nhiêu phách đen?", ["2", "3", "4"], 1, 0],
+  ["Chia phách", "Đếm 1 và 2 và 3 và 4 và. Mỗi tiếng cách nhau nửa phách. Nốt đen dài 1 phách; móc đơn dài ½; móc kép dài ¼. Liên ba móc đơn chia một phách thành 3 phần bằng nhau, khác với 2 móc đơn.", "Hai nốt móc đơn dài tổng cộng bao nhiêu?", ["½ phách", "1 phách", "2 phách"], 1, 1],
+  ["Dấu lặng", "Dấu lặng cũng chiếm thời gian: lặng đen 1 phách, lặng đơn ½ phách. Khi nghỉ, vẫn đếm và giữ chân đều. Ở bài gõ, ô Nghỉ không gõ; ô Giữ tiếp tục ngân nếu đang thổi, không vào nốt mới.", "Gặp dấu lặng đen, bạn làm gì?", ["Dừng đếm", "Bỏ qua ngay", "Nghỉ đủ 1 phách, vẫn đếm"], 2, 2],
+  ["Nốt chấm và dấu nối", "Dấu chấm tăng thêm một nửa trường độ: đen chấm = 1½ phách, trắng chấm = 3. Dấu nối nối hai nốt cùng cao độ thành một tiếng dài, không đánh lưỡi lại. Dấu luyến nhóm các nốt thành câu liền tiếng; trên sáo thường chỉ đánh lưỡi nốt đầu.", "Đen chấm cộng một móc đơn bằng bao nhiêu?", ["2 phách", "3 phách", "1½ phách"], 0, 3],
+  ["Lấy đà và đảo phách", "Lấy đà là ô đầu chưa đủ số phách, dẫn vào phách mạnh của ô sau. Đảo phách: âm bắt đầu ở phần nhẹ và kéo qua phần mạnh tiếp theo. Đừng đổi nhịp chân theo nốt: chân giữ đều, lưỡi vào theo tiết tấu.", "Khi chơi đảo phách, nhịp chân nên thế nào?", ["Theo từng nốt", "Giữ đều", "Dừng ở chỗ nối"], 1, 4],
+  ["Nhịp 6/8", "6/8 gồm 6 móc đơn mỗi ô, thường cảm nhận thành 2 phách lớn, mỗi phách là một nốt đen chấm. Đếm 1-la-li 2-la-li, nhấn tiếng 1 và 2. Khác 3/4: 3/4 có 3 nhóm, mỗi nhóm 2 móc đơn. Bài gõ bên dưới hiện luyện 4/4; hãy luyện 6/8 với mẫu riêng khi đọc sheet.", "6/8 thường có bao nhiêu phách lớn?", ["2, mỗi phách 3 móc đơn", "3, mỗi phách 2 móc đơn", "6 phách đen"], 0, 1],
+  ["Giọng và hóa biểu", "Dấu thăng nâng nốt ½ cung; giáng hạ ½ cung; bình hủy thăng/giáng. Hóa biểu áp dụng xuyên suốt cho các nốt cùng tên ở mọi quãng, trừ khi có dấu hóa bất thường thay đổi. Dấu hóa bất thường thường có hiệu lực hết ô nhịp cho cùng nốt ở cùng quãng. Đô trưởng không có thăng/giáng; Sol trưởng có Fa thăng; Fa trưởng có Si giáng.", "Hóa biểu Sol trưởng có nốt nào thăng?", ["Đô", "Fa", "Son"], 1, 0],
+  ["Đọc sheet thành câu", "Trước khi thổi: xem khóa, hóa biểu, số chỉ nhịp; tìm dấu lặng, dấu nối và chỗ lấy hơi. Đọc/gõ tiết tấu trước, rồi thổi chậm cả nốt lẫn nhịp. Dấu nhắc lại :|| quay về ||: hoặc đầu bài nếu không có dấu mở. Tập riêng câu sai trước khi nối cả bài.", "Khi một câu liên tục sai nhịp, nên làm gì?", ["Tăng tốc", "Bỏ dấu lặng", "Tách câu, gõ chậm rồi thổi"], 2, 3]
+];
+// Một ô 4/4, đơn vị là nửa phách: hit, hold, rest.
+const TIMING_PATTERNS = [
+  { name: "1 · Phách đều", cells: [1,0,1,0,1,0,1,0], hint: "Bốn nốt đen: gõ 1, 2, 3, 4." },
+  { name: "2 · Chia đôi", cells: [1,1,1,1,1,1,1,1], hint: "Tám móc đơn: gõ cả số và tiếng ‘và’." },
+  { name: "3 · Có dấu lặng", cells: [1,0,-1,-1,1,0,-1,1], hint: "Đen, lặng đen, đen, lặng đơn, móc đơn. Nghỉ vẫn đếm." },
+  { name: "4 · Đen chấm", cells: [1,0,0,1,1,0,0,1], hint: "Đen chấm–móc đơn, lặp lại. Gõ ở 1, ‘và’ của 2, 3, ‘và’ của 4." },
+  { name: "5 · Đảo phách", cells: [-1,1,0,1,0,1,0,1], hint: "Lặng đơn, móc–đen nối, các nốt vào ở phần ‘và’. Giữ chân ở số." }
+];
+const timing = { lesson: 0, pattern: 0, answer: null, run: null, raf: 0, nodes: [], token: 0 };
+function timingHistory() {
+  try { const a = JSON.parse(localStorage.getItem("hoc-sao-timing-v1")); return Array.isArray(a) ? a.slice(-20) : []; } catch (_) { return []; }
+}
+function paintTiming() {
+  const lesson = TIMING_LESSONS[timing.lesson], pattern = TIMING_PATTERNS[timing.pattern];
+  const history = timingHistory();
+  return `<section class="timing-page">
+    <div class="card"><h2>Nhịp & nhạc lý</h2><p>Đã biết thổi nốt? Học một ý → gõ đúng tiết tấu → mở sheet và thổi chậm theo nhịp.</p>
+    <div class="timing-lessons">${TIMING_LESSONS.map((l,i)=>`<button class="btn ${i===timing.lesson?'on':''}" data-act="timing-lesson" data-i="${i}">${i+1}. ${l[0]}</button>`).join('')}</div>
+    <h3>${lesson[0]}</h3><p>${lesson[1]}</p><p><strong>${lesson[2]}</strong></p>
+    <div class="row">${lesson[3].map((a,i)=>`<button class="btn" data-act="timing-answer" data-i="${i}">${a}</button>`).join('')}</div>
+    <p role="status">${timing.answer===null?'Chọn đáp án để kiểm tra.':timing.answer===lesson[4]?'Đúng. Hãy áp dụng khi đọc sheet.':'Chưa đúng. Đáp án: '+lesson[3][lesson[4]]+'. Đọc lại giải thích phía trên.'}</p></div>
+    <div class="card"><h3>Luyện tiết tấu riêng · 4/4</h3><p>Nghe mẫu trước, rồi gõ 2 ô giống nhau. Đếm vào 4 phách. Mỗi ô dưới dài ½ phách; ● là vào nốt, — là giữ, Nghỉ là im lặng.</p>
+    <div class="row">${TIMING_PATTERNS.map((p,i)=>`<button class="btn ${i===timing.pattern?'on':''}" data-act="timing-pattern" data-i="${i}">${p.name}</button>`).join('')}</div>
+    <p>${pattern.hint}</p><div class="timing-grid">${pattern.cells.map((c,i)=>`<div class="timing-cell ${c<0?'rest':''}" data-timing-cell="${i}"><small>${Math.floor(i/2)+1}${i%2?' và':''}</small><strong>${c===1?'●':c===0?'—':'Nghỉ'}</strong></div>`).join('')}</div>
+    <p>Dùng tốc độ BPM ở thanh trên (chụp tại lúc bắt đầu). Tiếng thấp là máy đếm phách; tiếng cao là mẫu tiết tấu.</p>
+    <div class="row"><button class="btn" data-act="timing-demo">Nghe mẫu</button><button class="btn primary" data-act="timing-start">Tập gõ</button><button class="btn" data-act="timing-stop">Dừng</button></div>
+    <button class="btn" id="timingPad" aria-label="Gõ tiết tấu">Chạm để gõ · hoặc phím cách</button>
+    <p id="timingLive" role="status" aria-live="polite">Bắt đầu chậm. Mục tiêu: ít nhất 80% lần vào nốt đúng trong 3 lượt trước khi tăng 5 BPM.</p>
+    <div id="timingResult" class="timing-results"></div>
+    <p class="foot-note">Bài này chấm thời điểm gõ, chưa đo độ ngân hoặc tiếng sáo. Độ trễ thiết bị có thể ảnh hưởng kết quả; hãy so sánh các lượt trên cùng thiết bị.</p></div>
+    <div class="card"><h3>Lượt tập gần đây</h3>${history.length?`<ul>${history.slice(-5).reverse().map(h=>`<li>${esc(h.date)} · ${esc(h.name)} · ${h.bpm} BPM · ${h.score}% · thiếu ${h.missed}, thừa ${h.extra}</li>`).join('')}</ul>`:'<p>Chưa có lượt tập. Kết quả được lưu trên trình duyệt này.</p>'}<button class="btn" data-act="tab" data-tab="sheet">Áp dụng vào sheet</button></div>
+  </section>`;
+}
+function stopTiming() {
+  timing.token++;
+  cancelAnimationFrame(timing.raf);
+  timing.nodes.forEach(n=>{ try { n.stop(); } catch (_) {} });
+  timing.nodes = []; timing.run = null;
+}
+function timingSound(ctx, at, frequency, duration) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.value = frequency; g.gain.setValueAtTime(0,at);
+  g.gain.linearRampToValueAtTime(.12,at+.005); g.gain.exponentialRampToValueAtTime(.001,at+duration);
+  o.connect(g); g.connect(ctx.destination); o.start(at); o.stop(at+duration);
+  o.onended=()=>{o.disconnect();g.disconnect();}; timing.nodes.push(o);
+}
+async function startTiming(demo) {
+  stopTiming(); engine.stop();
+  const token = timing.token;
+  const live = document.getElementById("timingLive");
+  try {
+    const ctx = await engine.ac();
+    if (token!==timing.token || state.tab!=="timing") return;
+    if (!ctx || ctx.state!=="running") throw new Error("audio");
+    const p=TIMING_PATTERNS[timing.pattern], beat=60/state.bpm, start=ctx.currentTime+.15+4*beat;
+    const targets=[];
+    for(let i=0;i<16;i++) if(p.cells[i%8]===1) targets.push(start+i*beat/2);
+    const run={ctx,start,end:start+8*beat,beat,targets,taps:[],demo,name:p.name,bpm:state.bpm};
+    timing.run=run;
+    document.getElementById("timingResult").innerHTML='';
+    for(let i=-4;i<8;i++) timingSound(ctx,start+i*beat,i%4===0?520:340,.05);
+    if(demo) targets.forEach(t=>timingSound(ctx,t,1000,.07));
+    function frame(){
+      if(timing.run!==run) return;
+      const now=ctx.currentTime;
+      live.textContent=now<start?'Đếm vào: '+Math.min(4,Math.ceil((start-now)/beat)):now<run.end?(demo?'Nghe mẫu':'Gõ theo mẫu')+' · ô '+(Math.floor((now-start)/(4*beat))+1)+' · phách '+(Math.floor((now-start)/beat)%4+1):demo?'Đã nghe mẫu. Bấm Tập gõ để tự làm.':'Đang tổng kết…';
+      const cell=now>=start&&now<run.end?Math.floor((now-start)/(beat/2))%8:-1;
+      document.querySelectorAll('[data-timing-cell]').forEach(el=>el.classList.toggle('active',Number(el.dataset.timingCell)===cell));
+      if(now>run.end+Math.min(.2,beat*.3)) { timing.run=null; if(!demo) finishTiming(run); return; }
+      timing.raf=requestAnimationFrame(frame);
+    }
+    frame();
+  } catch (_) { if(live) live.textContent="Không phát được âm thanh. Bấm Nghe mẫu để thử lại."; }
+}
+function timingTap() {
+  const r=timing.run;
+  if(!r || r.demo) return;
+  const t=r.ctx.currentTime;
+  if(t<r.start-Math.min(.2,r.beat*.3)||t>r.end) return;
+  r.taps.push(t);
+  const el=document.getElementById('timingPad');
+  el.textContent='Đã gõ '+r.taps.length+' lần';
+}
+// Ghép theo thứ tự bằng quy hoạch động, cho phép bỏ sót hoặc gõ thừa.
+function matchTiming(targets,taps,windowSeconds) {
+  const n=targets.length,m=taps.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(Infinity)),prev=Array.from({length:n+1},()=>Array(m+1));
+  dp[0][0]=0;
+  for(let i=0;i<=n;i++) for(let j=0;j<=m;j++) {
+    const put=(a,b,c,type)=>{if(c<dp[a][b]){dp[a][b]=c;prev[a][b]=type;}};
+    if(i<n) put(i+1,j,dp[i][j]+1,'miss');
+    if(j<m) put(i,j+1,dp[i][j]+1,'extra');
+    if(i<n&&j<m&&Math.abs(targets[i]-taps[j])<=windowSeconds) put(i+1,j+1,dp[i][j]+Math.abs(targets[i]-taps[j])/windowSeconds,'hit');
+  }
+  let i=n,j=m,extra=0;const rows=[];
+  while(i||j){const p=prev[i][j];if(p==='hit'){rows.push({index:i-1,delta:(taps[j-1]-targets[i-1])*1000});i--;j--;}else if(p==='miss'){rows.push({index:--i,delta:null});}else{j--;extra++;}}
+  return {rows:rows.reverse(),extra};
+}
+function finishTiming(r) {
+  const tolerance=Math.min(.09,r.beat*.15), result=matchTiming(r.targets,r.taps,Math.min(.2,r.beat*.3));
+  const good=result.rows.filter(x=>x.delta!==null&&Math.abs(x.delta)<=tolerance*1000).length;
+  const missed=result.rows.filter(x=>x.delta===null).length;
+  const score=Math.round(100*good/(r.targets.length+result.extra));
+  document.getElementById('timingLive').textContent=`${score}% vào nốt đúng · ${good}/${r.targets.length} · thiếu ${missed} · thừa ${result.extra}. Ngưỡng đúng ±${Math.round(tolerance*1000)} ms.`;
+  document.getElementById('timingPad').textContent='Chạm để gõ · hoặc phím cách';
+  document.getElementById('timingResult').innerHTML=`<table><thead><tr><th>Lần vào nốt</th><th>Kết quả</th></tr></thead><tbody>${result.rows.map(x=>`<tr><td>${x.index+1}</td><td>${x.delta===null?'Bỏ sót':Math.abs(x.delta)<=tolerance*1000?'Đúng nhịp':(x.delta<0?'Sớm ':'Muộn ')+Math.round(Math.abs(x.delta))+' ms'}</td></tr>`).join('')}</tbody></table><p>${score>=80?'Giữ kết quả này trong 3 lượt rồi hãy tăng tốc.':'Giảm 5–10 BPM, đếm cả tiếng “và”, nghe mẫu rồi thử lại.'}</p>`;
+  const history=timingHistory();history.push({date:new Date().toLocaleString('vi-VN'),name:r.name,bpm:r.bpm,score,missed,extra:result.extra});
+  try{localStorage.setItem('hoc-sao-timing-v1',JSON.stringify(history.slice(-20)));}catch(_){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden && timing.run) {stopTiming();const el=document.getElementById('timingLive');if(el)el.textContent='Đã dừng khi rời màn hình. Bấm Tập gõ để bắt đầu lại.';}});
 
 function init() {
   remixPiece();
