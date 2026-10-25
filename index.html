@@ -754,6 +754,16 @@
   .collected-card { min-width:0; }
   .sheet-view-buttons { flex:none; }
   .collected-sheets summary { min-height:44px; cursor:pointer; color:var(--accent-ink); }
+
+  .practice-fit.ear-practice { overflow:auto; display:block; padding-bottom:24px; }
+  .ear-page .card { margin-bottom:12px; }
+  .ear-page button,.ear-page select { min-width:44px; min-height:44px; }
+  .ear-page .ear-listen { min-height:64px; font-size:18px; }
+  .ear-page .ear-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0; }
+  .ear-page button:disabled { opacity:.5; cursor:default; }
+  .ear-page .ear-feedback { min-height:48px; }
+  .ear-page h2 { margin-top:0; }
+
 </style>
 </head>
 <body>
@@ -1139,7 +1149,7 @@ const state = {
   beat: { fileName: "", bpm: 0, key: "", keyIdx: 0, duration: 0, buffer: null, url: "", recommendation: "", semitones: 0, speed: 100, instrumentKey: 0 },
   songBeat: true,
   songTongue: true,
-  practice: ["name", "mixed", "method", "value", "read", "tap", "doi"].includes(saved.practice) ? saved.practice : "name",
+  practice: ["name", "mixed", "ear", "method", "value", "read", "tap", "doi"].includes(saved.practice) ? saved.practice : "name",
   level: saved.level || 1,
   extras: !!saved.extras,
   noteReg: saved.noteReg || 1,
@@ -2758,23 +2768,25 @@ function paintPractice() {
     ["method", "Cách luyện"],
     ["name", "Nhận diện nốt"],
     ["mixed", "Trộn quãng 1–2–3"],
+    ["ear", "Luyện tai"],
     ["value", "Nhận phách"],
     ["read", "Đọc ô nhịp"],
     ["tap", "Đập chân"],
     ["doi", "Đổi ngón"]
   ].map(([id, label]) => `<button type="button" class="btn ${state.practice === id ? "primary" : ""}" data-act="practice" data-mode="${id}">${label}</button>`).join("");
   let body = "";
-  if (state.practice === "method") body = paintMethod();
+  if (state.practice === "ear") body = paintEar();
+  else if (state.practice === "method") body = paintMethod();
   else if (state.practice === "tap") body = paintTap();
   else if (state.practice === "doi") body = paintPairs();
   else {
     if (!state.quiz || state.quiz.mode !== state.practice || state.quiz.level !== state.level || state.quiz.reg !== state.noteReg) state.quiz = makeQuiz();
     body = paintQuestion();
   }
-  const levelRow = state.practice === "tap" || state.practice === "doi" || state.practice === "method" || state.practice === "mixed" ? "" : `<div class="seg">${levels}</div>`;
+  const levelRow = state.practice === "tap" || state.practice === "doi" || state.practice === "method" || state.practice === "mixed" || state.practice === "ear" ? "" : `<div class="seg">${levels}</div>`;
   const regRow = state.practice === "name" ? noteRegButtons() : state.practice === "mixed" ? `<p>30 câu trộn quãng 1, 2, 3 · Đồ 1–Son 3 theo bộ nốt hiện có. Chọn đúng cả tên và quãng; không cần bật “Hiện cao độ 2 và 3”.</p>` : "";
   const songPractice = state.practice === "tap" && SONG_LIBRARY.some((song) => song.id === state.tapPiece);
-  return `<div class="practice-fit ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
+  return `<div class="practice-fit ${state.practice === "ear" ? "ear-practice" : ""} ${songPractice ? "song-practice" : ""}"><div class="seg">${modes}</div>${regRow}${levelRow}${body}</div>`;
 }
 function paintMethod() {
   const steps = [
@@ -3768,6 +3780,7 @@ async function startFingerListen() {
   fingerListen.raf = requestAnimationFrame(frame);
 }
 function paint() {
+  stopEarAudio();
   stopTiming();
   stopLineListen();
   stopPairListen();
@@ -4710,6 +4723,15 @@ async function startPairListen() {
 }
 
 const actions = {
+  "ear-lesson"(el) { ear.lesson = el.dataset.lesson; ear.session = null; saveEarSettings(); paint(); },
+  "ear-level"(el) { ear.level = Number(el.dataset.level); ear.session = null; saveEarSettings(); paint(); },
+  "ear-play"() { playEarQuestion(); },
+  "ear-reference"() { playEarSequence([60]); },
+  "ear-answer"(el) { answerEar(el.dataset.answer); },
+  "ear-next"() { if (ear.session && ear.session.questions[ear.session.index]?.answered) { ear.session.index++; paint(); } },
+  "ear-new"() { ear.session = null; paint(); },
+  "ear-reveal"() { const q = ear.session?.questions[ear.session.index]; if(q?.heard && !ear.playing) { q.revealed = true; paint(); } },
+  "ear-echo-next"() { const q=ear.session?.questions[ear.session.index]; if(q?.revealed) { ear.session.index++; paint(); } },
   "sheet-view"(el) { state.sheetView = el.dataset.view === "collected" ? "collected" : "interactive"; save(); go(); },
   "sheet-filter"(el) { state.sheetFilter = el.dataset.filter; go(); },
   "timing-lesson"(el) { timing.lesson = Number(el.dataset.i); timing.pattern = TIMING_LESSONS[timing.lesson][5]; timing.answer = null; timing.position = 0; save(); paint(); },
@@ -5423,6 +5445,115 @@ function finishTiming(r) {
   try{localStorage.setItem('hoc-sao-timing-v1',JSON.stringify(history.slice(-20)));}catch(_){}
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden && timing.run) {stopTiming();const el=document.getElementById('timingLive');if(el)el.textContent='Đã dừng khi rời màn hình. Bấm Tập gõ để bắt đầu lại.';}});
+
+
+const EAR_LESSONS = [
+  { id: 'same', title: '1 · Giống hay khác?', hint: 'Nghe hai âm, trả lời giống hoặc khác. Mức dễ dùng Đô và Son cách xa nhau; mức khó mới dùng các nốt gần nhau.' },
+  { id: 'direction', title: '2 · Lên hay xuống?', hint: 'Nghe hai âm. Âm thứ hai cao hơn hay thấp hơn? Chưa cần gọi tên nốt.' },
+  { id: 'name', title: '3 · Đoán nốt có mốc', hint: 'Mỗi câu phát Đô làm mốc trước, nghỉ một chút rồi phát nốt cần đoán. Chỉ đoán nốt thứ hai.' },
+  { id: 'echo', title: '4 · Nghe và thổi lại', hint: 'Nghe, ngân nga rồi tìm lại trên sáo. Thử trước khi hiện đáp án. Bài này tự đối chiếu, không dùng micro chấm điểm.' }
+];
+function readEarSettings() {
+  try { const x=JSON.parse(localStorage.getItem('hoc-sao-ear-settings-v1'));return x && typeof x==='object' ? x : {}; } catch (_) {return {};}
+}
+const earSaved=readEarSettings();
+const ear={lesson:EAR_LESSONS.some(l=>l.id===earSaved.lesson)?earSaved.lesson:'same',level:[1,2,3].includes(earSaved.level)?earSaved.level:1,session:null,token:0,timer:0,playing:false,message:''};
+function saveEarSettings(){try{localStorage.setItem('hoc-sao-ear-settings-v1',JSON.stringify({lesson:ear.lesson,level:ear.level}));}catch(_){}}
+function earHistory(){try{const x=JSON.parse(localStorage.getItem('hoc-sao-ear-history-v1'));return Array.isArray(x)?x.slice(-20):[];}catch(_){return [];}}
+function earName(midi){const n=NOTES.find(n=>n.midi===midi);return n?n.name:'Đô';}
+function makeEarSession(lesson,level){
+  const pools={1:[60,67],2:[60,64,67],3:[60,62,64,65,67,69,71]};
+  const pool=pools[level], questions=[];
+  // Cân bằng các đáp án nhị phân để không thể thắng bằng chọn một nút suốt lượt.
+  const binary=shuffle([true,true,true,true,true,false,false,false,false,false]);
+  const namePool=level===1?[62,67]:level===2?[62,64,67]:[60,62,64,65,67,69,71];
+  let names=[];while(names.length<10)names.push(...shuffle(namePool));
+  for(let i=0;i<10;i++){
+    let seq,answer,options;
+    if(lesson==='same'){
+      const a=pool[Math.floor(Math.random()*pool.length)];
+      const neighbors=pool.filter((n,j)=>Math.abs(j-pool.indexOf(a))===1);
+      const other=shuffle(level===3?neighbors:pool.filter(n=>n!==a))[0];seq=[a,binary[i]?a:other];answer=binary[i]?'same':'different';
+      options=[['same','Giống nhau'],['different','Khác nhau']];
+    }else if(lesson==='direction'){
+      let a,b;
+      if(level===1){a=60;b=67;}else if(level===3){const j=Math.floor(Math.random()*(pool.length-1));a=pool[j];b=pool[j+1];}
+      else{const pair=shuffle(pool).slice(0,2).sort((a,b)=>a-b);[a,b]=pair;}
+      seq=binary[i]?[a,b]:[b,a];answer=binary[i]?'up':'down';options=[['up','Đi lên'],['down','Đi xuống']];
+    }else if(lesson==='name'){
+      seq=[60,names[i]];answer=String(names[i]);options=namePool.map(n=>[String(n),earName(n)]);
+    }else{
+      seq=Array.from({length:level},()=>pool[Math.floor(Math.random()*pool.length)]);answer='';options=[];
+    }
+    questions.push({seq,answer,options,heard:false,answered:false,revealed:false,choice:null});
+  }
+  return {lesson,level,questions,index:0,good:0,saved:false};
+}
+function paintEar(){
+  if(!ear.session)ear.session=makeEarSession(ear.lesson,ear.level);
+  const session=ear.session, lesson=EAR_LESSONS.find(l=>l.id===ear.lesson), q=session.questions[session.index];
+  const top=`<div class="card"><h2>Luyện tai · 10 phút mỗi ngày</h2><p>Mỗi lượt 10 câu, nghe lại không giới hạn. Đạt ít nhất 8/10 trong 3 lượt rồi hãy tăng mức.</p>
+    <div class="row">${EAR_LESSONS.map(l=>`<button class="btn ${l.id===ear.lesson?'primary':''}" data-act="ear-lesson" data-lesson="${l.id}">${l.title}</button>`).join('')}</div>
+    <div class="row">${[1,2,3].map(n=>`<button class="btn ${n===ear.level?'primary':''}" data-act="ear-level" data-level="${n}">${n===1?'Dễ':n===2?'Vừa':'Khó hơn'}</button>`).join('')}</div><p>${lesson.hint}</p></div>`;
+  if(!q){
+    if(!session.saved && ear.lesson!=='echo'){
+      const h=earHistory();h.push({lesson:ear.lesson,level:ear.level,good:session.good,total:10,date:new Date().toLocaleString('vi-VN')});
+      try{localStorage.setItem('hoc-sao-ear-history-v1',JSON.stringify(h.slice(-20)));}catch(_){}session.saved=true;
+    }
+    const latest=earHistory().filter(h=>h.lesson===ear.lesson&&h.level===ear.level).slice(-3);
+    return `<section class="ear-page">${top}<div class="card"><h3>${ear.lesson==='echo'?'Đã thực hành 10 mẫu':session.good+'/10 câu đúng'}</h3><p>${ear.lesson==='echo'?'Tiếp tục nghe và thổi đối chiếu; bài này không tính điểm nhận diện.':latest.length===3&&latest.every(h=>h.good>=8)?'Ba lượt gần đây đều đạt ít nhất 8/10. Bạn có thể thử mức tiếp theo.':'Nghe lại chậm rãi, tập cùng mức đến khi chắc rồi mới tăng độ khó.'}</p><button class="btn primary" data-act="ear-new">Làm lượt mới</button></div>${paintEarHistory()}</section>`;
+  }
+  const revealed=q.answered||q.revealed;
+  const explanation=ear.lesson==='same'?(q.answer==='same'?'Hai âm cùng cao độ.':'Hai âm khác cao độ.'):ear.lesson==='direction'?(q.answer==='up'?'Âm thứ hai cao hơn.':'Âm thứ hai thấp hơn.'):ear.lesson==='name'?'Âm đầu là Đô làm mốc. Âm cần đoán là '+earName(q.seq[1])+'.':'Thổi lần lượt: '+q.seq.map(earName).join(' → ')+'.';
+  return `<section class="ear-page">${top}<div class="card">
+    <p>Câu ${session.index+1}/10${ear.lesson!=='echo'?' · đúng '+session.good:''}</p>
+    <button class="btn primary ear-listen" data-act="ear-play">${q.heard?'Nghe lại câu này':'Nghe câu hỏi'}</button>
+    ${ear.lesson==='name'||ear.lesson==='echo'?'<button class="btn" data-act="ear-reference">Nghe Đô làm mốc</button>':''}
+    <p id="earAudioStatus" role="status" aria-live="polite">${q.heard?'Đã nghe. Bạn có thể trả lời hoặc nghe lại.':'Bấm Nghe câu hỏi trước. Âm mẫu vẫn phát khi tắt tùy chọn “Nghe tiếng nốt”.'}</p>
+    ${ear.lesson!=='echo'?`<div class="ear-options">${q.options.map(([value,label])=>`<button class="btn ${revealed&&value===q.answer?'primary':''}" data-act="ear-answer" data-answer="${value}" ${!q.heard||q.answered?'disabled':''}>${esc(label)}</button>`).join('')}</div>`:`<p>Nghe → ngân nga → thổi lại. ${ear.level} nốt trong cùng quãng 1 của sáo Đô.</p><button class="btn" data-act="ear-reveal" ${!q.heard||q.revealed?'disabled':''}>Hiện đáp án để đối chiếu</button>`}
+    <div class="ear-feedback" role="status">${revealed?`<p><strong>${ear.lesson==='echo'?'Đối chiếu':q.choice===q.answer?'Đúng.':'Chưa đúng.'}</strong> ${explanation}</p><p>${ear.lesson!=='echo'?'Trình tự vừa nghe: '+q.seq.map(earName).join(' → ')+'.':''}</p>`:''}</div>
+    ${revealed?`<button class="btn primary" data-act="${ear.lesson==='echo'?'ear-echo-next':'ear-next'}">${session.index===9?'Xem kết quả':'Câu tiếp theo'}</button>`:''}
+    <p class="foot-note">Âm mẫu tổng hợp theo cao độ sáo Đô, cùng âm sắc và âm lượng. Tập nhỏ vừa nghe; dừng trước khi thổi để âm mẫu không lẫn với tiếng sáo của bạn.</p>
+  </div>${paintEarHistory()}<p class="foot-note">Kết quả lưu trên trình duyệt này. Bài nghe có mốc để luyện tai tương đối; không đánh giá khả năng nghe tên nốt tuyệt đối.</p></section>`;
+}
+function paintEarHistory(){
+  const rows=earHistory().slice(-5).reverse();
+  return `<div class="card"><h3>Lượt luyện gần đây</h3>${rows.length?`<ul>${rows.map(h=>`<li>${esc(EAR_LESSONS.find(l=>l.id===h.lesson)?.title||'Luyện tai')} · mức ${h.level} · ${h.good}/${h.total} · ${esc(h.date)}</li>`).join('')}</ul>`:'<p>Chưa có kết quả. Mỗi lượt có 10 câu, không giới hạn số lần nghe lại.</p>'}</div>`;
+}
+function stopEarAudio(){ear.token++;clearTimeout(ear.timer);ear.playing=false;}
+function syncEarAudioUI(message){
+  const el=document.getElementById('earAudioStatus');if(el)el.textContent=message;
+  const q=ear.session?.questions[ear.session.index];
+  document.querySelectorAll('[data-act="ear-answer"],[data-act="ear-reveal"]').forEach(b=>{b.disabled=ear.playing||!q?.heard||q.answered||(b.dataset.act==='ear-reveal'&&q.revealed);});
+}
+async function playEarSequence(seq,onEnd){
+  stopEarAudio();engine.stop();
+  const token=ear.token;ear.playing=true;syncEarAudioUI('Đang phát, hãy nghe hết rồi trả lời…');
+  try{
+    const ctx=await engine.ac();
+    if(token!==ear.token||state.tab!=='practice'||state.practice!=='ear')return;
+    if(!ctx||ctx.state!=='running')throw Error('audio unavailable');
+    const start=ctx.currentTime+.08,spacing=1.05,duration=.65;
+    seq.forEach((n,i)=>tone(ctx,start+i*spacing,n+12,duration,false,''));
+    ear.timer=setTimeout(()=>{
+      if(token!==ear.token)return;
+      ear.playing=false;if(onEnd)onEnd();syncEarAudioUI('Đã phát xong. Bạn có thể trả lời hoặc nghe lại.');
+    },(start-ctx.currentTime+(seq.length-1)*spacing+duration+.06)*1000);
+  }catch(_){if(token===ear.token){ear.playing=false;syncEarAudioUI('Không phát được âm thanh. Kiểm tra âm lượng, chế độ im lặng rồi bấm nghe lại.');}}
+}
+function playEarQuestion(){
+  const q=ear.session?.questions[ear.session.index];if(!q)return;
+  playEarSequence(q.seq,()=>{q.heard=true;});
+}
+function answerEar(value){
+  const q=ear.session?.questions[ear.session.index];
+  if(!q||!q.heard||q.answered||ear.playing||!q.options.some(o=>o[0]===value))return;
+  q.choice=value;q.answered=true;if(value===q.answer)ear.session.good++;
+  paint();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden && ear.playing){stopEarAudio();engine.stop();syncEarAudioUI('Đã dừng khi rời màn hình. Bấm Nghe câu hỏi để nghe trọn câu.');}
+});
 
 function init() {
   remixPiece();
